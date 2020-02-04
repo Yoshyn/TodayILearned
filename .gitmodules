@@ -1,0 +1,3 @@
+[submodule "languages/python/python_koans"]
+	path = languages/python/python_koans
+	url = https://github.com/Yoshyn/python_koans
