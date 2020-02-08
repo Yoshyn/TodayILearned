@@ -1,0 +1,13 @@
+require "bundler/gem_tasks"
+require "rspec/core/rake_task"
+require 'rake/extensiontask'
+
+RSpec::Core::RakeTask.new(:spec)
+task :default => :spec
+
+Rake::ExtensionTask.new("super") do |ext|
+  ext.lib_dir = "lib/super"
+end
+
+# Why does it generate a .bundle and not a .so
+# ruby -e "require 'rbconfig'; puts RbConfig::CONFIG['DLEXT'];"
