@@ -2,12 +2,20 @@ require "bundler/gem_tasks"
 require "rspec/core/rake_task"
 require 'rake/extensiontask'
 
-RSpec::Core::RakeTask.new(:spec)
-task :default => :spec
-
-Rake::ExtensionTask.new("super") do |ext|
-  ext.lib_dir = "lib/super"
+spec = Gem::Specification.load( File.dirname(__FILE__) + '/super.gemspec' )
+Rake::ExtensionTask.new("super", spec) do |ext|
+  ext.lib_dir = "lib"
 end
+
+Gem::PackageTask.new spec  do |pkg|
+  pkg.need_zip = pkg.need_tar = false
+end
+
+RSpec::Core::RakeTask.new :spec  do |spec|
+  spec.pattern = 'spec/**/*_spec.rb'
+end
+
+task default: [:compile, :spec]
 
 # Why does it generate a .bundle and not a .so
 # ruby -e "require 'rbconfig'; puts RbConfig::CONFIG['DLEXT'];"

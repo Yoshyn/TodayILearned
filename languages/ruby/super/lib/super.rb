@@ -1,6 +1,6 @@
 require "super/version"
 require 'rbconfig'
-super_lib = "super/super.#{RbConfig::CONFIG['DLEXT']}"
+super_lib = "./super.#{RbConfig::CONFIG['DLEXT']}"
 require_relative super_lib
 
 

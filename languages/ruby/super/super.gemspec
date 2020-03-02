@@ -9,9 +9,12 @@ Gem::Specification.new do |spec|
   spec.author  = "Following Vinicius Stock tutorial"
 
   spec.files = Dir.glob("ext/**/*.{c,rb}") + Dir.glob("lib/**/*.rb")
+  spec.test_files = Dir['spec/**/*_spec.rb']
 
-  spec.extensions << "ext/super/extconf.rb"
+  spec.extensions = [ "ext/super/extconf.rb" ]
   spec.require_paths = ["lib"]
+
+  spec.platform = Gem::Platform::RUBY
 
   spec.add_development_dependency "bundler"
   spec.add_development_dependency "rake"
