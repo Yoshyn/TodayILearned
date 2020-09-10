@@ -1,0 +1,26 @@
+---
+version: '3'
+services:
+  freqtrade:
+    image: freqtradeorg/freqtrade:local
+    restart: unless-stopped
+    container_name: freqtrade
+    volumes:
+      - "./freqtrade-strategies/user_data:/freqtrade/user_data"
+    # Default command used when running `docker compose up`
+    command: >
+      trade
+      --logfile /freqtrade/user_data/logs/freqtrade.log
+      --db-url sqlite:////freqtrade/user_data/tradesv3.sqlite
+      --config /freqtrade/user_data/config.json
+      --strategy SampleStrategy
+
+# Debug
+# docker-compose -f $(pwd)/../ft-docker-compose.yml run --rm freqtrade-dev bash
+  freqtrade-dev:
+    image: freqtradeorg/freqtrade:local-dev
+    container_name: freqtrade-dev
+    volumes:
+      - "./freqtrade-strategies/user_data:/freqtrade/user_data"
+    # Default command used when running `docker compose up`
+    command: bash
