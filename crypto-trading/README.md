@@ -44,7 +44,7 @@ docker-compose -f $(pwd)/../ft-docker-compose.yml run --rm freqtrade new-config 
 
 5 - Download data to run the tests :
 
-`docker-compose -f $(pwd)/../ft-docker-compose.yml run --rm freqtrade download-data --exchange binance --days 100`
+`docker-compose -f $(pwd)/../ft-docker-compose.yml run --rm freqtrade download-data --exchange binance --days 30`
 
 5 - Let's test the `MaSuperStrategie.py` strategy : `docker-compose -f $(pwd)/../ft-docker-compose.yml run --rm freqtrade backtesting -s MaSuperStrategie --export trades`
 
@@ -52,14 +52,19 @@ docker-compose -f $(pwd)/../ft-docker-compose.yml run --rm freqtrade new-config 
 
 7 - Let's compose some basic strategies :
 
-docker-compose -f $(pwd)/../ft-docker-compose.yml run --rm freqtrade backtesting --strategy-list InformativeSample Strategy001 Strategy002 Strategy003 Strategy004 Strategy005 MaSuperStrategie
+docker-compose -f $(pwd)/../ft-docker-compose.yml run --rm freqtrade backtesting --strategy-list InformativeSample Strategy001 Strategy002 Strategy003 Strategy004 Strategy005 MaSuperStrategie --strategy-path /freqtrade/user_data/strategies/berlinguyinca
 
-## TODO
-
-# Check berlinguyinca stategies
 8 - Let's check berlinguyinca strategies :
 
-ADXMomentum ASDTSRockwellTrading AdxSmas AverageStrategy AwesomeMacd BbandRsi BinHV27 BinHV45 CCIStrategy CMCWinner ClucMay72018 CofiBitStrategy CombinedBinHAndCluc DoesNothingStrategy EMASkipPump Freqtrade_backtest_validation_freqtrade1 Low_BB MACDStrategy MACDStrategy_crossed MultiRSI Quickie ReinforcedAverageStrategy ReinforcedQuickie ReinforcedSmoothScalp Scalp Simple SmoothOperator SmoothScalp TDSequentialStrategy TechnicalExampleStrategy
+docker-compose -f $(pwd)/../ft-docker-compose.yml run --rm freqtrade backtesting --strategy-list ADXMomentum ASDTSRockwellTrading AdxSmas AverageStrategy AwesomeMacd BbandRsi BinHV27 BinHV45 CCIStrategy CMCWinner ClucMay72018 CofiBitStrategy CombinedBinHAndCluc DoesNothingStrategy EMASkipPump Freqtrade_backtest_validation_freqtrade1 Low_BB MACDStrategy MACDStrategy_crossed MultiRSI Quickie ReinforcedAverageStrategy ReinforcedQuickie ReinforcedSmoothScalp Scalp Simple SmoothOperator SmoothScalp TDSequentialStrategy TechnicalExampleStrategy --strategy-path /freqtrade/user_data/strategies/berlinguyinca
+
+KeyError with ReinforcedSmoothScalp => `dataframe['resample_sma']` become `dataframe.get('resample_sma')`
+Error in SmoothOperator => `replace df = df.resample(str(int(interval[:-1]) * factor) + 'min', plotoschow=ohlc_dict)` become  `df = df.resample(str(int(interval[:-1]) * factor) + 'min').agg(ohlc_dict)` and comment `(dataframe['close'] > dataframe)`
+
+
+Ok so BinHV45, ClucMay72018, CombinedBinHAndCluc, MACDStrategy_crossed seems interresting.
+
+# TODO :
 
 # Setup the UI : https://github.com/freqtrade/frequi
 

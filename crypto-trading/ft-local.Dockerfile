@@ -2,7 +2,7 @@
 FROM python:3.8.5-slim-buster
 
 RUN apt-get update \
-    && apt-get -y install curl build-essential libssl-dev sqlite3 \
+    && apt-get -y install curl git build-essential libssl-dev sqlite3 \
     && apt-get clean \
     && pip install --upgrade pip
 
@@ -21,6 +21,7 @@ COPY requirements.txt requirements-common.txt requirements-hyperopt.txt /freqtra
 COPY requirements-dev.txt requirements-plot.txt /freqtrade/
 RUN pip install numpy --no-cache-dir \
   && pip install -r requirements-dev.txt --no-cache-dir
+RUN pip install git+https://github.com/freqtrade/technical
 
 # Install and execute
 COPY . /freqtrade/
