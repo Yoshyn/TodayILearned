@@ -17,7 +17,7 @@ RUN cd /tmp && /tmp/install_ta-lib.sh && rm -r /tmp/*ta-lib*
 ENV LD_LIBRARY_PATH /usr/local/lib
 
 # Install dependencies
-COPY requirements.txt requirements-common.txt requirements-hyperopt.txt /freqtrade/
+COPY requirements.txt requirements-hyperopt.txt /freqtrade/
 COPY requirements-dev.txt requirements-plot.txt /freqtrade/
 RUN pip install numpy --no-cache-dir \
   && pip install -r requirements-dev.txt --no-cache-dir

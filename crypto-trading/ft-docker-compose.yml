@@ -1,26 +1,53 @@
 ---
-version: '3'
+version: '3.8'
+networks:
+  freqtrade-network:
+    name: freqtrade-network
 services:
   freqtrade:
+    build:
+      context: ./freqtrade
+      dockerfile: ../ft-local.Dockerfile
     image: freqtradeorg/freqtrade:local
     restart: unless-stopped
     container_name: freqtrade
+    hostname: freqtrade
     volumes:
       - "./freqtrade-strategies/user_data:/freqtrade/user_data"
     # Default command used when running `docker compose up`
+    entrypoint: freqtrade
     command: >
       trade
       --logfile /freqtrade/user_data/logs/freqtrade.log
       --db-url sqlite:////freqtrade/user_data/tradesv3.sqlite
       --config /freqtrade/user_data/config.json
-      --strategy SampleStrategy
-
+      --strategy MaSuperStrategy
+    networks:
+      - freqtrade-network
+    ports:
+      - "8080:8080"
+  frequi:
+    build:
+      context: ./frequi
+      dockerfile: "./Dockerfile"
+    # image: freqtradeorg/frequi:local
+    restart: unless-stopped
+    ports:
+      - "8081:80"
 # Debug
-# docker-compose -f $(pwd)/../ft-docker-compose.yml run --rm freqtrade-dev bash
-  freqtrade-dev:
-    image: freqtradeorg/freqtrade:local-dev
-    container_name: freqtrade-dev
+# docker-compose -f ft-docker-compose.yml run --rm --service-ports --use-aliases freqtrade-console bash
+  freqtrade-console:
+    build:
+      context: ./freqtrade
+      dockerfile: ../ft-local.Dockerfile
+    image: freqtradeorg/freqtrade:local
+    restart: never
+    container_name: freqtrade-console
+    hostname: freqtrade-console
     volumes:
       - "./freqtrade-strategies/user_data:/freqtrade/user_data"
     # Default command used when running `docker compose up`
+    entrypoint: ""
     command: bash
+    networks:
+      - freqtrade-network
