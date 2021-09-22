@@ -1,0 +1,60 @@
+
+Be sure to enable all of your required AWS Security Token Service (STS) endpoint regions before you launch AWS Control Tower.
+
+Require 3 valid emails :
+  * For root account
+  * For audit account
+  * For log Account
+
+Tips : for theses accounts you can use alias to your root emails.
+You should never use again the root account expect for billing. All managment stuff will be done using the SSO user that will be created bellow.
+
+-> Will setup 3 AWS accounts.
+-> Will create one SSO user (AWS Control Tower Admin) against the root account using the same root acount email.
+  -> Send one email to verify check email and then an invitation to join AWS SSO which will activate the user.
+
+-> Will create 8 SSO groups
+  AWSAccountFactory :     Read-only access to account factory in AWS Service Catalog for end users
+  AWSAuditAccountAdmins : Admin rights to cross-account audit account
+  AWSControlTowerAdmins : Admin rights to AWS Control Tower core and provisioned accounts
+  AWSLogArchiveAdmins :   Admin rights to log archive account
+  AWSLogArchiveViewers :  Read-only access to log archive account
+  AWSSecurityAuditors :   Read-only access to all accounts for security audits
+  AWSSecurityAuditPowerUsers : Power user access to all accounts for security audits
+  AWSServiceCatalogAdmins :    Admin rights to account factory in AWS Service Catalog
+
+-> Will send to audit account's email that need to be validated :
+  -> sns subscriptions for each reagions for AggregateSecurityNotifications
+
+-> Will send 4 emails : (useless)
+  -> 2 for audit account (welcome & account ready)
+  -> 2 for log account (welcome & account ready)
+
+
+
+----------------------------------------------------------------------------------------------------------
+
+
+-> Create 2 Organizational units under control tower services :
+  Engineers      (for user1, user2, ...).
+  Environnements (Production, Pre-prod, ) & des groups
+
+
+
+-> Create 1 Account Factory per Engineers user under control tower services
+  -> CompanyNameShortcut
+  -> UserNameShortcut = FirstName Lastname -> felastname
+  -> Email : Company email account
+  -> Display name like following : {CompanyNameShortcut}-eng-{UserNameShortcut}
+  -> AWS SSO email : Same than previous
+  -> Organizational unit : Engineers
+
+-> Create a SSO login for the user & assign the user to the previous account with AWSAdministratorAccess.
+
+
+
+TODO :
+  -> username sans email
+  -> update url of sso portal
+  -> Set budget and limit per account
+  -> Follow https://controltower.aws-management.tools/core/accountfactory/
