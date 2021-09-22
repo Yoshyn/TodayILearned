@@ -1,0 +1,19 @@
+> terraform init
+
+> terraform apply -auto-approve
+
+
+# Set a variable directly
+> terraform apply -var 'region=us-west-2'
+
+# Or avoid previous by creating a file name :
+> touch terraform.tfvars
+# (or .auto.tfvars)
+
+# Or use exports (only string) :
+EXPORT TF_VAR_region="eu-west-3"
+
+# Launch manually other files (for password & username not under version control) :
+> terraform apply -auto-approve -var-file 'sensitive.tfvars'
+
+> terraform destroy -auto-approve

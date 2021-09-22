@@ -1,0 +1,49 @@
+docker-demo ❯❯❯ terraform init
+Initializing the backend...
+Initializing provider plugins...
+- Finding latest version of terraform-providers/docker...
+- Installing terraform-providers/docker v2.7.2...
+- Installed terraform-providers/docker v2.7.2 (signed by HashiCorp)
+
+Terraform has been successfully initialized!
+
+docker-demo ❯❯❯ terraform plan
+An execution plan has been generated and is shown below.
+Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  # docker_container.ngnix will be created
+  + resource "docker_container" "ngnix" {
+      ....
+      + working_dir      = (known after apply)
+      + ports {
+          + external = 8080
+          + internal = 80
+          + ip       = "0.0.0.0"
+          + protocol = "tcp"
+        }
+    }
+
+  # docker_image.ngnix will be created
+  + resource "docker_image" "ngnix" {
+      + id           = (known after apply)
+      + keep_locally = false
+      + latest       = (known after apply)
+      + name         = "ngnix:latest"
+    }
+
+Plan: 2 to add, 0 to change, 0 to destroy.
+
+docker-demo ❯❯❯ terraform apply -auto-approve && docker ps
+docker_image.nginx: Creating...
+docker_image.nginx: Still creating... [10s elapsed]
+docker_image.nginx: Creation complete after 12s [id=sha256:bc9a0695f5712dcaaa09a5adc415a3936ccba13fc2587dfd76b1b8aeea3f221cnginx:latest]
+docker_container.nginx: Creating...
+docker_container.nginx: Creation complete after 1s [id=09157b6b890f4c1fbe8175290ba903ab8b3a145951c88949dadebe090984cd8c]
+
+Apply complete! Resources: 2 added, 0 changed, 0 destroyed.
+CONTAINER ID   IMAGE          COMMAND                  CREATED         STATUS                  PORTS                  NAMES
+09157b6b890f   bc9a0695f571   "/docker-entrypoint.…"   2 seconds ago   Up Less than a second   0.0.0.0:8080->80/tcp   tutorial
+docker-demo ❯❯❯ terraform destroy -auto-approve

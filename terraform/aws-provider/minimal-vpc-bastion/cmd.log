@@ -1,0 +1,7 @@
+# Setup a VPC with a private & public subnet. A NAT and a bastion. That's all
+
+> terraform init
+
+> terraform apply -auto-approve
+
+> terraform destroy -auto-approve
