@@ -69,11 +69,24 @@ data "aws_ami" "amazon_linux_2" {
   owners = ["amazon"]
 }
 
+
+data "aws_security_group" "default_sg" {
+  filter {
+    name   = "group-name"
+    values = ["${var.global_name}-Default"]
+  }
+
+  filter {
+    name   = "vpc-id"
+    values = [var.vpc_id]
+  }
+}
+
 resource "aws_instance" "bastion" {
   ami                         = data.aws_ami.amazon_linux_2.id
   key_name                    = aws_key_pair.bastion_key_pair.key_name
   instance_type               = "t2.micro"
-  security_groups             = [aws_security_group.allow_ssh_sg.id]
+  security_groups             = [data.aws_security_group.default_sg.id, aws_security_group.allow_ssh_sg.id]
   subnet_id                   = var.public_subnet_id
   associate_public_ip_address = true
 
