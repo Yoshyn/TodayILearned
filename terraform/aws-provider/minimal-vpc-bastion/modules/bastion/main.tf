@@ -90,6 +90,11 @@ resource "aws_instance" "bastion" {
   subnet_id                   = var.public_subnet_id
   associate_public_ip_address = true
 
+  user_data = <<-EOL
+  #!/bin/bash -xe
+  sudo yum update -y
+  EOL
+
   tags = {
     Name        = "${var.global_name}-bastion-ec2-t2-micro"
     environment = "${var.environment}"
