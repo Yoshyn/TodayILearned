@@ -47,7 +47,7 @@ resource "aws_subnet" "public_subnet" {
   availability_zone       = element(var.availability_zones, count.index)
   map_public_ip_on_launch = true
   tags = {
-    Name        = "${var.global_name}-${element(var.availability_zones, count.index)}-public-subnet"
+    Name        = "${var.global_name}-${element(var.availability_zones, count.index)}-public-subnet-${count.index}"
     environment = "${var.environment}"
     module      = "networking"
   }
@@ -61,7 +61,7 @@ resource "aws_subnet" "private_subnet" {
   availability_zone       = element(var.availability_zones, count.index)
   map_public_ip_on_launch = false
   tags = {
-    Name        = "${var.global_name}-${element(var.availability_zones, count.index)}-private-subnet"
+    Name        = "${var.global_name}-${element(var.availability_zones, count.index)}-private-subnet-${count.index}"
     environment = "${var.environment}"
     module      = "networking"
   }
