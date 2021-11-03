@@ -128,7 +128,7 @@ resource "aws_security_group" "default" {
     from_port = "0"
     to_port   = "0"
     protocol  = "-1"
-    self      = "true"
+    self      = true
   }
   tags = {
     Name        = "${var.global_name}-default-sg"
