@@ -7,6 +7,7 @@ resource "aws_vpc" "vpc" {
     Name        = "${var.global_name}-vpc"
     environment = "${var.environment}"
     module      = "networking"
+    Automation  = "Terraform"
   }
 }
 
@@ -18,6 +19,7 @@ resource "aws_internet_gateway" "ig" {
     Name        = "${var.global_name}-igw"
     environment = "${var.environment}"
     module      = "networking"
+    Automation  = "Terraform"
   }
 }
 
@@ -36,6 +38,7 @@ resource "aws_nat_gateway" "nat" {
     Name        = "${var.global_name}-nat"
     environment = "${var.environment}"
     module      = "networking"
+    Automation  = "Terraform"
   }
 }
 
@@ -50,6 +53,7 @@ resource "aws_subnet" "public_subnet" {
     Name        = "${var.global_name}-${element(var.availability_zones, count.index)}-public-subnet-${count.index}"
     environment = "${var.environment}"
     module      = "networking"
+    Automation  = "Terraform"
   }
 }
 
@@ -64,6 +68,7 @@ resource "aws_subnet" "private_subnet" {
     Name        = "${var.global_name}-${element(var.availability_zones, count.index)}-private-subnet-${count.index}"
     environment = "${var.environment}"
     module      = "networking"
+    Automation  = "Terraform"
   }
 }
 
@@ -74,6 +79,7 @@ resource "aws_route_table" "private" {
     Name        = "${var.global_name}-private-route-table"
     environment = "${var.environment}"
     module      = "networking"
+    Automation  = "Terraform"
   }
 }
 
@@ -84,6 +90,7 @@ resource "aws_route_table" "public" {
     Name        = "${var.global_name}-public-route-table"
     environment = "${var.environment}"
     module      = "networking"
+    Automation  = "Terraform"
   }
 }
 
@@ -134,5 +141,6 @@ resource "aws_security_group" "default" {
     Name        = "${var.global_name}-default-sg"
     environment = "${var.environment}"
     module      = "networking"
+    Automation  = "Terraform"
   }
 }

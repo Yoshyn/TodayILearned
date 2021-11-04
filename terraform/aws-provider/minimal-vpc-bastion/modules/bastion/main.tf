@@ -12,6 +12,7 @@ resource "aws_key_pair" "bastion_key_pair" {
     Name        = "${var.global_name}-bastion-key-pair"
     environment = "${var.environment}"
     module      = "bastion"
+    Automation  = "Terraform"
   }
 }
 
@@ -23,6 +24,7 @@ resource "aws_secretsmanager_secret" "bastion_private_key" {
     Name        = "${var.global_name}-bastion_private_key"
     environment = "${var.environment}"
     module      = "bastion"
+    Automation  = "Terraform"
   }
 }
 
@@ -55,6 +57,7 @@ resource "aws_security_group" "allow_ssh_sg" {
     Name        = "${var.global_name}-ssh-sg"
     environment = "${var.environment}"
     module      = "bastion"
+    Automation  = "Terraform"
   }
 }
 
@@ -101,5 +104,6 @@ resource "aws_instance" "bastion" {
     Name        = "${var.global_name}-bastion-ec2-t2-micro"
     environment = "${var.environment}"
     module      = "bastion"
+    Automation  = "Terraform"
   }
 }
