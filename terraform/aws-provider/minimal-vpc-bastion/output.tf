@@ -6,7 +6,14 @@
 #   value = "aws secretsmanager get-secret-value --secret-id '/${var.global_name}/${var.environment}/database/connection_string' --region ${var.region} | jq '.SecretString'"
 # }
 
+output "ecs_load_balancer_dns" {
+  value = module.ecs_cluster.load_balancer_dns
+}
 
-output "web_elb" {
-  value = module.ecs_cluster.web_elb
+output "ecs_load_balancer_arn" {
+  value = module.ecs_cluster.load_balancer_arn
+}
+
+output "ecs_task_exection_role_name" {
+  value = module.ecs_cluster.ecs_task_exection_role_name
 }

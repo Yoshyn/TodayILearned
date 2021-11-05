@@ -1,22 +1,14 @@
-locals {
-  cluster_name = "${var.global_name}-${var.environment}"
-}
-
-#
-# ECS
-#
-
 resource "aws_ecs_cluster" "main" {
-  name = local.cluster_name
+  name = "${var.global_name}-${var.environment}"
 
   lifecycle {
     create_before_destroy = true
   }
 
   tags = {
-    Name        = "${var.global_name}-ecs"
+    Name        = "${var.global_name}-ecs-cluster"
     environment = "${var.environment}"
-    module      = "ecs"
+    module      = "ecs-cluster"
     Automation  = "Terraform"
   }
 }
@@ -32,7 +24,7 @@ resource "aws_ecs_cluster" "main" {
 # container instances and register them to a cluster, you must create an IAM
 # role for your container instances to use.
 
-data "aws_iam_policy_document" "ec2_instance_assume_role_policy" {
+data "aws_iam_policy_document" "ec2_execution_policy" {
   statement {
     actions = ["sts:AssumeRole"]
 
@@ -43,35 +35,42 @@ data "aws_iam_policy_document" "ec2_instance_assume_role_policy" {
   }
 }
 
-resource "aws_iam_role" "ec2_instance_assume_role" {
-  name               = "ec2_instance_assume_role-${local.cluster_name}"
-  assume_role_policy = data.aws_iam_policy_document.ec2_instance_assume_role_policy.json
+resource "aws_iam_role" "aiip_ec2_execution_role" {
+  name               = "ec2-execution-role"
+  assume_role_policy = data.aws_iam_policy_document.ec2_execution_policy.json
 
   tags = {
-    Name        = "${var.global_name}-ec2_instance_assume_role"
+    Name        = "${var.global_name}-aiip-ec2-execution-role"
     environment = "${var.environment}"
-    module      = "ecs"
+    module      = "ecs-cluster"
     Automation  = "Terraform"
   }
 }
 
-resource "aws_iam_role_policy_attachment" "ec2_instance_assume_role_policy_attachment" {
-  role       = aws_iam_role.ec2_instance_assume_role.name
+resource "aws_iam_role_policy_attachment" "aiip_ec2_execution_role" {
+  role       = aws_iam_role.aiip_ec2_execution_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
 }
 
 
-resource "aws_iam_instance_profile" "ec2_instance_profile" {
-  name = "ec2-instance-profile"
-  role = aws_iam_role.ec2_instance_assume_role.name
+resource "aws_iam_instance_profile" "alc_ec2_execution_profile" {
+  name = "ec2-execution-profile"
+  role = aws_iam_role.aiip_ec2_execution_role.name
+
+  tags = {
+    Name        = "${var.global_name}-alc-ec2-execution-profile"
+    environment = "${var.environment}"
+    module      = "ecs-cluster"
+    Automation  = "Terraform"
+  }
 }
 
 #
 # Security Group
 #
 
-resource "aws_security_group" "internal_only_docker" {
-  name        = "${var.global_name}-internal_only_docker"
+resource "aws_security_group" "internal_only" {
+  name        = "${var.global_name}-internal_only-sg"
   description = "Allow internal traffic to docker servers"
   vpc_id      = var.vpc_id
 
@@ -90,15 +89,15 @@ resource "aws_security_group" "internal_only_docker" {
   }
 
   tags = {
-    Name        = "${var.global_name}-internal-only-docker-sg"
+    Name        = "${var.global_name}-internal_only-sg"
     environment = "${var.environment}"
-    module      = "ecs"
+    module      = "ecs-cluster"
     Automation  = "Terraform"
   }
 }
 
-resource "aws_security_group" "outbound_internet_access" {
-  name        = "${var.global_name}-outbound_internet_access"
+resource "aws_security_group" "http_access" {
+  name        = "${var.global_name}-http-access-sg"
   description = "Allow external traffic to port 80 & 443"
   vpc_id      = var.vpc_id
 
@@ -124,9 +123,9 @@ resource "aws_security_group" "outbound_internet_access" {
   }
 
   tags = {
-    Name        = "${var.global_name}-external-web-sg"
+    Name        = "${var.global_name}-http-access-sg"
     environment = "${var.environment}"
-    module      = "ecs"
+    module      = "ecs-cluster"
     Automation  = "Terraform"
   }
 }
@@ -145,14 +144,14 @@ data "aws_ami" "ecs_ami" {
   }
 }
 
-resource "aws_launch_configuration" "docker_launch_cfg" {
-  name_prefix          = format("ecs-%s-", local.cluster_name)
-  iam_instance_profile = aws_iam_instance_profile.ec2_instance_profile.name
+resource "aws_launch_configuration" "ecs_instance_cfg" {
+  name_prefix          = format("%s-ecs_instance_cfg", var.global_name)
+  iam_instance_profile = aws_iam_instance_profile.alc_ec2_execution_profile.name
 
   instance_type               = "t3.micro"
   image_id                    = data.aws_ami.ecs_ami.image_id
   associate_public_ip_address = false
-  security_groups             = ["${aws_security_group.internal_only_docker.id}"]
+  security_groups             = [aws_security_group.internal_only.id]
 
   root_block_device {
     volume_type = "standard"
@@ -177,13 +176,8 @@ EOF
   }
 }
 
-data "aws_vpc" "vpc" {
-  id = var.vpc_id
-}
-
-
-resource "aws_autoscaling_group" "docker_asg" {
-  name = "ecs-${local.cluster_name}"
+resource "aws_autoscaling_group" "ecs_asg" {
+  name = "${var.global_name}-ecs-asg"
 
   desired_capacity = var.desired_capacity
   max_size         = var.max_size
@@ -193,7 +187,7 @@ resource "aws_autoscaling_group" "docker_asg" {
   health_check_type         = "EC2"
   termination_policies      = ["OldestLaunchConfiguration", "Default"]
 
-  launch_configuration = aws_launch_configuration.docker_launch_cfg.id
+  launch_configuration = aws_launch_configuration.ecs_instance_cfg.id
 
   vpc_zone_identifier = var.private_subnets_ids
 
@@ -209,12 +203,12 @@ resource "aws_autoscaling_group" "docker_asg" {
     },
     {
       "key"                 = "Cluster"
-      "value"               = local.cluster_name
+      "value"               = "${var.global_name}-${var.environment}"
       "propagate_at_launch" = true
     },
     {
       "key"                 = "module"
-      "value"               = "ecs"
+      "value"               = "ecs-cluster"
       "propagate_at_launch" = true
     },
     {
@@ -225,7 +219,7 @@ resource "aws_autoscaling_group" "docker_asg" {
   ]
 }
 
-data "aws_iam_policy_document" "ecs_service_assume_role_policy" {
+data "aws_iam_policy_document" "ecs_task_exection_role_policy" {
   statement {
     actions = ["sts:AssumeRole"]
 
@@ -236,83 +230,77 @@ data "aws_iam_policy_document" "ecs_service_assume_role_policy" {
   }
 }
 
-resource "aws_iam_role" "ecs_service_assume_role" {
-  name               = "ecs_service_assume_role-${local.cluster_name}"
-  assume_role_policy = data.aws_iam_policy_document.ecs_service_assume_role_policy.json
+resource "aws_iam_role" "ecs_task_exection_role" {
+  name               = "ecs-task-execution-role"
+  assume_role_policy = data.aws_iam_policy_document.ecs_task_exection_role_policy.json
 
   tags = {
     Name        = "${var.global_name}-ecs-instance-role"
     environment = "${var.environment}"
-    module      = "ecs"
+    module      = "ecs-cluster"
     Automation  = "Terraform"
   }
 }
 
-resource "aws_iam_role_policy_attachment" "ecs_service_assume_role_policy_attachment" {
-  role       = aws_iam_role.ecs_service_assume_role.name
+resource "aws_iam_role_policy_attachment" "ecs_task_exection_role_policy_attachment" {
+  role       = aws_iam_role.ecs_task_exection_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole"
 }
 
-data "template_file" "web_task_definition" {
-  template = file("${path.module}/web.json")
-}
+resource "aws_lb" "ecs_alb" {
+  name               = "${var.global_name}-ecs-alb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.internal_only.id, aws_security_group.http_access.id]
+  subnets            = var.public_subnets_ids
 
-resource "aws_ecs_task_definition" "web" {
-  family                = "web"
-  container_definitions = data.template_file.web_task_definition.rendered
-}
 
-resource "aws_ecs_service" "web" {
-  name            = "web"
-  cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.web.arn
-  desired_count   = "1"
-  iam_role        = aws_iam_role.ecs_service_assume_role.name
+  drop_invalid_header_fields = true
+  idle_timeout               = 60
 
-  load_balancer {
-    elb_name       = aws_elb.web.id
-    container_name = "nginx"
-    container_port = 80
-  }
+  enable_deletion_protection = false
+  enable_http2               = true
 
   tags = {
-    Name        = "${var.global_name}-ecs-service-web"
+    Name        = "${var.global_name}-ecs-alb"
     environment = "${var.environment}"
-    module      = "ecs"
+    module      = "ecs-cluster"
     Automation  = "Terraform"
   }
 }
 
-# Update subnets
-resource "aws_elb" "web" {
-  name            = "web"
-  subnets         = var.public_subnets_ids
-  security_groups = ["${aws_security_group.internal_only_docker.id}", "${aws_security_group.outbound_internet_access.id}"]
+resource "aws_alb_listener" "ecs_alb_listener" {
+  load_balancer_arn = aws_lb.ecs_alb.arn
 
-  listener {
-    instance_port     = 80
-    instance_protocol = "http"
-    lb_port           = 80
-    lb_protocol       = "http"
+  port     = "80"
+  protocol = "HTTP"
+
+  default_action {
+    target_group_arn = aws_alb_target_group.ecs_web_target_group.arn
+    type             = "forward"
   }
+}
 
-  # Exercise to reader to setup 443
+data "aws_vpc" "vpc" {
+  id = var.vpc_id
+}
+
+resource "aws_alb_target_group" "ecs_web_target_group" {
+  name     = "${var.global_name}-ecs-web-target-group"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = data.aws_vpc.vpc.id
 
   health_check {
-    healthy_threshold   = 2
+    healthy_threshold   = 5
     unhealthy_threshold = 2
     timeout             = 5
-    target              = "HTTP:80/"
-    interval            = 30
   }
 
-  cross_zone_load_balancing = true
-  idle_timeout              = 60
-
   tags = {
-    Name        = "${var.global_name}-web-elb"
+    Name        = "${var.global_name}-ecs-web-target-group"
     environment = "${var.environment}"
-    module      = "ecs"
+    module      = "ecs-cluster"
     Automation  = "Terraform"
   }
 }

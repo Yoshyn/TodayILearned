@@ -1,0 +1,95 @@
+# https://gist.github.com/tstrohmeier/3da60392a5ea2eecbe32895e6624a2b4
+# https://medium.com/boltops/gentle-introduction-to-how-aws-ecs-works-with-example-tutorial-cea3d27ce63d
+# https://jmespath.org/examples.html
+
+set REGION "eu-west-1"
+
+set BASE_NAME 	   "myProject"
+set CONTAINER_NAME "web"
+set CONTAINER_PORT 4567
+set TASK_DEFINITION    "$BASE_NAME-$CONTAINER_NAME"
+
+# Create the task (unrelated to ecs yet)
+# Family is the name of the resource. But this resource are create with a sequential number on aws side
+env -i bash -c "cat > ./$TASK_DEFINITION-task.json << EOF
+{
+  \"family\": \"$TASK_DEFINITION\",
+  \"containerDefinitions\": [
+    {
+      \"name\": \"$CONTAINER_NAME\",
+      \"image\": \"tongueroo/sinatra:latest\",
+      \"cpu\": 128,
+      \"memoryReservation\": 128,
+      \"portMappings\": [
+        {
+          \"containerPort\": $CONTAINER_PORT,
+          \"protocol\": \"tcp\"
+        }
+      ],
+      \"command\": [
+        \"ruby\", \"app.rb\"
+      ],
+      \"entryPoint\": [],
+      \"essential\": true,
+      \"environment\": [
+      {
+        \"name\": \"CUSTOM_VALUE\",
+        \"value\": \"WILL_BE_SET\"
+      }
+    ]
+    }
+  ]
+}
+EOF"
+
+aws ecs register-task-definition --cli-input-json file://$TASK_DEFINITION-task.json --region $REGION
+aws ecs list-task-definitions --region $REGION
+
+
+# How to 'Remove a task :' (TLDR : not possible)
+# aws ecs deregister-task-definition --task-definition my-task:1
+# Check also : https://stackoverflow.com/questions/35045264/how-do-you-delete-an-aws-ecs-task-definition
+
+# Create the service
+
+set GLOBAL_NAME  "DEMO"
+set SERVICE_NAME "$BASE_NAME-$CONTAINER_NAME"
+
+set LOAD_BALANCER_ARN (aws elbv2 describe-load-balancers --region $REGION --query "LoadBalancers[?(LoadBalancerName == '$GLOBAL_NAME-ecs-alb')].[LoadBalancerName,DNSName,LoadBalancerArn]" | jq -r 'first | last')
+
+# TODO RETRIEVE THE LOAD_BALANCER_TARGET_GROUP_ARN
+# set LOAD_BALANCER_TARGET_GROUP_ARN
+# aws elbv2 describe-target-groups --load-balancer-arn $LOAD_BALANCER_ARN --region $REGION
+# 
+
+# /!\ This MUST output something ! the role has been created with TF
+set ECS_REQUIRED_ROLE "ecs-task-execution-role"
+aws iam list-roles --query "Roles[?(RoleName == '$ECS_REQUIRED_ROLE')]"
+
+set CLUSTER_ARN (aws ecs list-clusters --region $REGION --query "clusterArns[?contains(@, 'DEMO')]" | jq -r 'first')
+set CLUSTER_NAME (echo $CLUSTER_ARN | awk -F  "/" '{print $2}')
+
+set DESIRED_COUNT (aws ecs describe-clusters --cluster $CLUSTER_NAME --region $REGION --query "clusters[].registeredContainerInstancesCount" | jq -r 'first')
+
+env -i bash -c "cat > ./$SERVICE_NAME-service.json << EOF
+{
+    \"cluster\": \"$CLUSTER_NAME\",
+    \"serviceName\": \"$SERVICE_NAME\",
+    \"taskDefinition\": \"$TASK_DEFINITION\",
+    \"loadBalancers\": [
+        {
+            \"targetGroupArn\": \"$LOAD_BALANCER_TARGET_GROUP_ARN\",
+            \"containerName\": \"$CONTAINER_NAME\",
+            \"containerPort\": $CONTAINER_PORT
+        }
+    ],
+    \"desiredCount\": $DESIRED_COUNT,
+    \"role\": \"$ECS_REQUIRED_ROLE\"
+}
+EOF"
+
+aws ecs create-service --cli-input-json file://$SERVICE_NAME.json --region $REGION
+
+
+# TODO UPDATE THE SERVICE
+# aws ecs update-service --cluster $CLUSTER_NAME --service $SERVICE_NAME --task-definition $TASK_DEF
