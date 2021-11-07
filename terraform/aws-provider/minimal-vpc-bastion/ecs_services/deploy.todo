@@ -56,15 +56,12 @@ set GLOBAL_NAME  "DEMO"
 set SERVICE_NAME "$BASE_NAME-$CONTAINER_NAME"
 
 set LOAD_BALANCER_ARN (aws elbv2 describe-load-balancers --region $REGION --query "LoadBalancers[?(LoadBalancerName == '$GLOBAL_NAME-ecs-alb')].[LoadBalancerName,DNSName,LoadBalancerArn]" | jq -r 'first | last')
+set LOAD_BALANCER_TARGET_GROUP_ARN (aws elbv2 describe-target-groups --load-balancer-arn $LOAD_BALANCER_ARN --region $REGION --query "TargetGroups[?(Protocol=='HTTP')].[TargetGroupArn]" | jq -r 'first | first')
 
-# TODO RETRIEVE THE LOAD_BALANCER_TARGET_GROUP_ARN
-# set LOAD_BALANCER_TARGET_GROUP_ARN
-# aws elbv2 describe-target-groups --load-balancer-arn $LOAD_BALANCER_ARN --region $REGION
-# 
 
-# /!\ This MUST output something ! the role has been created with TF
 set ECS_REQUIRED_ROLE "ecs-task-execution-role"
-aws iam list-roles --query "Roles[?(RoleName == '$ECS_REQUIRED_ROLE')]"
+# /!\ This MUST output something ! the role has been created with TF
+# aws iam list-roles --query "Roles[?(RoleName == '$ECS_REQUIRED_ROLE')]"
 
 set CLUSTER_ARN (aws ecs list-clusters --region $REGION --query "clusterArns[?contains(@, 'DEMO')]" | jq -r 'first')
 set CLUSTER_NAME (echo $CLUSTER_ARN | awk -F  "/" '{print $2}')
@@ -88,7 +85,8 @@ env -i bash -c "cat > ./$SERVICE_NAME-service.json << EOF
 }
 EOF"
 
-aws ecs create-service --cli-input-json file://$SERVICE_NAME.json --region $REGION
+aws ecs create-service --cli-input-json file://$SERVICE_NAME-service.json --region $REGION
+open "http://"(aws elbv2 describe-load-balancers --region $REGION --query "LoadBalancers[?(LoadBalancerName == '$GLOBAL_NAME-ecs-alb')].[DNSName] | [0][0]" --out text)
 
 
 # TODO UPDATE THE SERVICE
