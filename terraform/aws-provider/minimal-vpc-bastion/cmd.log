@@ -5,3 +5,7 @@
 > terraform apply -auto-approve
 
 > terraform destroy -auto-approve
+
+
+# TODO : Better secret in secret manager : hash & co
+# TODO : tag updated at

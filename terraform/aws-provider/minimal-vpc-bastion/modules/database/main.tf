@@ -25,15 +25,22 @@ resource "aws_security_group" "database_sg" {
 }
 
 resource "aws_db_subnet_group" "default" {
-  name       = "main"
+  name       = "${lower(var.global_name)}_${lower(var.environment)}_default"
   subnet_ids = var.private_subnets_ids
 
   tags = {
-    Name        = "${var.global_name}-db-subnet-group"
+    Name        = "${var.global_name}-default-db-subnet-group"
     environment = "${var.environment}"
     module      = "database"
     Automation  = "Terraform"
   }
+}
+
+resource "random_password" "database_root_password" {
+  count            = var.database_root_password != null ? 0 : 1
+  length           = 16
+  special          = true
+  override_special = "!#$%&*()-_=+[]{}<>:?"
 }
 
 resource "aws_db_instance" "database" {
@@ -47,7 +54,7 @@ resource "aws_db_instance" "database" {
   # Note that these settings may show up in logs,
   # and will be stored in the state file in raw text.
   username = var.database_root_username
-  password = var.database_root_password
+  password = var.database_root_password != null ? var.database_root_password : element(random_password.database_root_password, 0).result
 
   publicly_accessible = false
 
