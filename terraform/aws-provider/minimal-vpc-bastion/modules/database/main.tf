@@ -4,7 +4,7 @@ data "aws_vpc" "vpc" {
 
 /*==== VPC's RDS Security Group ======*/
 resource "aws_security_group" "database_sg" {
-  name        = "${var.global_name}-database-sg"
+  name        = "${var.project_name}-database-sg"
   description = "Allow DB access"
   vpc_id      = var.vpc_id
 
@@ -17,22 +17,18 @@ resource "aws_security_group" "database_sg" {
   }
 
   tags = {
-    Name        = "${var.global_name}-database-sg"
-    environment = "${var.environment}"
-    module      = "database"
-    Automation  = "Terraform"
+    Name   = "DatabaseSecurityGroup"
+    module = "database"
   }
 }
 
 resource "aws_db_subnet_group" "default" {
-  name       = "${lower(var.global_name)}_${lower(var.environment)}_default"
+  name       = "${lower(var.project_name)}_${lower(var.environment)}_default"
   subnet_ids = var.private_subnets_ids
 
   tags = {
-    Name        = "${var.global_name}-default-db-subnet-group"
-    environment = "${var.environment}"
-    module      = "database"
-    Automation  = "Terraform"
+    Name   = "DefaultDatabaseSubnetGroup"
+    module = "database"
   }
 }
 
@@ -44,7 +40,7 @@ resource "random_password" "database_root_password" {
 }
 
 resource "aws_db_instance" "database" {
-  identifier        = "${lower(var.global_name)}-${lower(var.environment)}-${formatdate("YYYY-MM-DD", timestamp())}"
+  identifier        = "${lower(var.project_name)}-${lower(var.environment)}-${formatdate("YYYY-MM-DD", timestamp())}"
   name              = var.database_name # (Optional) The name of the database to create when the DB instance is created.
   instance_class    = "db.t3.micro"     # https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.DBInstanceClass.html
   allocated_storage = 20                # The allocated storage in gibibytes.
@@ -72,22 +68,18 @@ resource "aws_db_instance" "database" {
   skip_final_snapshot = true
 
   tags = {
-    Name        = "${var.global_name}-db-instance"
-    environment = "${var.environment}"
-    module      = "database"
-    Automation  = "Terraform"
+    Name   = "DatabaseInstance"
+    module = "database"
   }
 }
 
 resource "aws_secretsmanager_secret" "database_private_key" {
-  name                    = "/${var.global_name}/${var.environment}/database/connection_string"
+  name                    = "/${var.project_name}/${var.environment}/database/connection_string"
   recovery_window_in_days = 0
 
   tags = {
-    Name        = "${var.global_name}-database_private_key"
-    environment = "${var.environment}"
-    module      = "database"
-    Automation  = "Terraform"
+    Name   = "DatabasePrivateKey"
+    module = "database"
   }
 }
 

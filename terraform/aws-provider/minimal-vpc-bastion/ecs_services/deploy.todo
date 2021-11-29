@@ -4,10 +4,10 @@
 
 set REGION "eu-west-1"
 
-set BASE_NAME 	   "myProject"
+set BASE_NAME "myProject"
 set CONTAINER_NAME "web"
 set CONTAINER_PORT 4567
-set TASK_DEFINITION    "$BASE_NAME-$CONTAINER_NAME"
+set TASK_DEFINITION "$BASE_NAME-$CONTAINER_NAME"
 
 # Create the task (unrelated to ecs yet)
 # Family is the name of the resource. But this resource are create with a sequential number on aws side

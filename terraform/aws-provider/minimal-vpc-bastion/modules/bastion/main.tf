@@ -9,22 +9,18 @@ resource "aws_key_pair" "bastion_key_pair" {
   public_key = tls_private_key.bastion_private_key.public_key_openssh
 
   tags = {
-    Name        = "${var.global_name}-bastion-key-pair"
-    environment = "${var.environment}"
-    module      = "bastion"
-    Automation  = "Terraform"
+    Name   = "BastionKeyPair"
+    module = "bastion"
   }
 }
 
 resource "aws_secretsmanager_secret" "bastion_private_key" {
-  name                    = "/${var.global_name}/${var.environment}/bastion/private_key_pem"
+  name                    = "/${var.project_name}/${var.environment}/bastion/private_key_pem"
   recovery_window_in_days = 0
 
   tags = {
-    Name        = "${var.global_name}-bastion_private_key"
-    environment = "${var.environment}"
-    module      = "bastion"
-    Automation  = "Terraform"
+    Name   = "BastionPrivateKey"
+    module = "bastion"
   }
 }
 
@@ -35,7 +31,7 @@ resource "aws_secretsmanager_secret_version" "bastion_private_key_secret_version
 
 /*==== VPC's Bastion Security Group ======*/
 resource "aws_security_group" "allow_ssh_sg" {
-  name        = "${var.global_name}-Allow-ssh"
+  name        = "${var.project_name}-Allow-ssh"
   description = "Security group to allow ssh"
   vpc_id      = var.vpc_id
 
@@ -54,10 +50,8 @@ resource "aws_security_group" "allow_ssh_sg" {
   }
 
   tags = {
-    Name        = "${var.global_name}-ssh-sg"
-    environment = "${var.environment}"
-    module      = "bastion"
-    Automation  = "Terraform"
+    Name   = "SecureShellSecurityGroup"
+    module = "bastion"
   }
 }
 
@@ -76,7 +70,7 @@ data "aws_ami" "amazon_linux_2" {
 data "aws_security_group" "default_sg" {
   filter {
     name   = "group-name"
-    values = ["${var.global_name}-Default"]
+    values = ["${var.project_name}-Default"]
   }
 
   filter {
@@ -101,9 +95,7 @@ resource "aws_instance" "bastion" {
   EOL
 
   tags = {
-    Name        = "${var.global_name}-bastion-ec2-t2-micro"
-    environment = "${var.environment}"
-    module      = "bastion"
-    Automation  = "Terraform"
+    Name   = "BastionEC2"
+    module = "bastion"
   }
 }

@@ -1,15 +1,13 @@
 resource "aws_ecs_cluster" "main" {
-  name = "${var.global_name}-${var.environment}"
+  name = "${var.project_name}-${var.environment}"
 
   lifecycle {
     create_before_destroy = true
   }
 
   tags = {
-    Name        = "${var.global_name}-ecs-cluster"
-    environment = "${var.environment}"
-    module      = "ecs-cluster"
-    Automation  = "Terraform"
+    Name   = "ElasticContainerServiceCluster"
+    module = "ecs-cluster"
   }
 }
 
@@ -35,33 +33,29 @@ data "aws_iam_policy_document" "ec2_execution_policy" {
   }
 }
 
-resource "aws_iam_role" "aiip_ec2_execution_role" {
+resource "aws_iam_role" "ec2_execution_role" {
   name               = "ec2-execution-role"
   assume_role_policy = data.aws_iam_policy_document.ec2_execution_policy.json
 
   tags = {
-    Name        = "${var.global_name}-aiip-ec2-execution-role"
-    environment = "${var.environment}"
-    module      = "ecs-cluster"
-    Automation  = "Terraform"
+    Name   = "Ec2ExecutionRole"
+    module = "ecs-cluster"
   }
 }
 
-resource "aws_iam_role_policy_attachment" "aiip_ec2_execution_role" {
-  role       = aws_iam_role.aiip_ec2_execution_role.name
+resource "aws_iam_role_policy_attachment" "ec2_execution_role" {
+  role       = aws_iam_role.ec2_execution_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
 }
 
 
-resource "aws_iam_instance_profile" "alc_ec2_execution_profile" {
+resource "aws_iam_instance_profile" "ec2_execution_profile" {
   name = "ec2-execution-profile"
-  role = aws_iam_role.aiip_ec2_execution_role.name
+  role = aws_iam_role.ec2_execution_role.name
 
   tags = {
-    Name        = "${var.global_name}-alc-ec2-execution-profile"
-    environment = "${var.environment}"
-    module      = "ecs-cluster"
-    Automation  = "Terraform"
+    Name   = "Ec2ExecutionProfile"
+    module = "ecs-cluster"
   }
 }
 
@@ -70,7 +64,7 @@ resource "aws_iam_instance_profile" "alc_ec2_execution_profile" {
 #
 
 resource "aws_security_group" "internal_only" {
-  name        = "${var.global_name}-internal_only-sg"
+  name        = "${var.project_name}-ecs-internal-only-sg"
   description = "Allow internal traffic to docker servers"
   vpc_id      = var.vpc_id
 
@@ -89,15 +83,13 @@ resource "aws_security_group" "internal_only" {
   }
 
   tags = {
-    Name        = "${var.global_name}-internal_only-sg"
-    environment = "${var.environment}"
-    module      = "ecs-cluster"
-    Automation  = "Terraform"
+    Name   = "EcsInternalOnlySecurityGroup"
+    module = "ecs-cluster"
   }
 }
 
 resource "aws_security_group" "http_access" {
-  name        = "${var.global_name}-http-access-sg"
+  name        = "${var.project_name}-http-access-sg"
   description = "Allow external traffic to port 80 & 443"
   vpc_id      = var.vpc_id
 
@@ -123,10 +115,8 @@ resource "aws_security_group" "http_access" {
   }
 
   tags = {
-    Name        = "${var.global_name}-http-access-sg"
-    environment = "${var.environment}"
-    module      = "ecs-cluster"
-    Automation  = "Terraform"
+    Name   = "HttpAccessSecurityGroup"
+    module = "ecs-cluster"
   }
 }
 
@@ -145,8 +135,8 @@ data "aws_ami" "ecs_ami" {
 }
 
 resource "aws_launch_configuration" "ecs_instance_cfg" {
-  name_prefix          = format("%s-ecs_instance_cfg", var.global_name)
-  iam_instance_profile = aws_iam_instance_profile.alc_ec2_execution_profile.name
+  name_prefix          = "${var.project_name}-ecs-cfg-"
+  iam_instance_profile = aws_iam_instance_profile.ec2_execution_profile.name
 
   instance_type               = "t3.micro"
   image_id                    = data.aws_ami.ecs_ami.image_id
@@ -154,30 +144,34 @@ resource "aws_launch_configuration" "ecs_instance_cfg" {
   security_groups             = [aws_security_group.internal_only.id]
 
   root_block_device {
-    volume_type = "standard"
+    volume_type = "gp3"
+    volume_size = 30
   }
 
   ebs_block_device {
     device_name = "/dev/xvdcz"
-    volume_type = "standard"
+    volume_type = "gp3"
+    volume_size = 40
     encrypted   = true
   }
 
   user_data = <<EOF
-#!/bin/bash
-# The cluster this agent should check into.
-echo 'ECS_CLUSTER=${aws_ecs_cluster.main.name}' >> /etc/ecs/ecs.config
-# Disable privileged containers.
-echo 'ECS_DISABLE_PRIVILEGED=true' >> /etc/ecs/ecs.config
-EOF
+    #!/bin/bash
+    # The cluster this agent should check into.
+    echo 'ECS_CLUSTER=${aws_ecs_cluster.main.name}' >> /etc/ecs/ecs.config
+    # Disable privileged containers.
+    echo 'ECS_DISABLE_PRIVILEGED=true' >> /etc/ecs/ecs.config
+  EOF
 
   lifecycle {
     create_before_destroy = true
   }
 }
 
+data "aws_default_tags" "default" {}
+
 resource "aws_autoscaling_group" "ecs_asg" {
-  name = "${var.global_name}-ecs-asg"
+  name_prefix = "${var.project_name}-ecs-asg-"
 
   desired_capacity = var.desired_capacity
   max_size         = var.max_size
@@ -195,28 +189,19 @@ resource "aws_autoscaling_group" "ecs_asg" {
     create_before_destroy = true
   }
 
-  tags = [
-    {
-      "key"                 = "environment"
-      "value"               = var.environment
-      "propagate_at_launch" = true
-    },
-    {
-      "key"                 = "Cluster"
-      "value"               = "${var.global_name}-${var.environment}"
-      "propagate_at_launch" = true
-    },
-    {
-      "key"                 = "module"
-      "value"               = "ecs-cluster"
-      "propagate_at_launch" = true
-    },
-    {
-      "key"                 = "Automation"
-      "value"               = "Terraform"
-      "propagate_at_launch" = true
-    },
-  ]
+  dynamic "tag" {
+
+    for_each = merge(data.aws_default_tags.default.tags, {
+      Name   = "EcsInstanceFromAutoScalingGroup",
+      module = "ecs-cluster"
+    })
+
+    content {
+      key                 = tag.key
+      value               = tag.value
+      propagate_at_launch = true
+    }
+  }
 }
 
 data "aws_iam_policy_document" "ecs_task_exection_role_policy" {
@@ -235,10 +220,8 @@ resource "aws_iam_role" "ecs_task_exection_role" {
   assume_role_policy = data.aws_iam_policy_document.ecs_task_exection_role_policy.json
 
   tags = {
-    Name        = "${var.global_name}-ecs-instance-role"
-    environment = "${var.environment}"
-    module      = "ecs-cluster"
-    Automation  = "Terraform"
+    Name   = "EcsExecutionRole"
+    module = "ecs-cluster"
   }
 }
 
@@ -248,7 +231,7 @@ resource "aws_iam_role_policy_attachment" "ecs_task_exection_role_policy_attachm
 }
 
 resource "aws_lb" "ecs_alb" {
-  name               = "${var.global_name}-ecs-alb"
+  name               = "${var.project_name}-ecs-alb"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.internal_only.id, aws_security_group.http_access.id]
@@ -262,10 +245,8 @@ resource "aws_lb" "ecs_alb" {
   enable_http2               = true
 
   tags = {
-    Name        = "${var.global_name}-ecs-alb"
-    environment = "${var.environment}"
-    module      = "ecs-cluster"
-    Automation  = "Terraform"
+    Name   = "AlbForEcs"
+    module = "ecs-cluster"
   }
 }
 
@@ -286,7 +267,7 @@ data "aws_vpc" "vpc" {
 }
 
 resource "aws_alb_target_group" "ecs_web_target_group" {
-  name     = "${var.global_name}-ecs-web-target-group"
+  name     = "${var.project_name}-ecs-web-target-group"
   port     = 80
   protocol = "HTTP"
   vpc_id   = data.aws_vpc.vpc.id
@@ -298,9 +279,7 @@ resource "aws_alb_target_group" "ecs_web_target_group" {
   }
 
   tags = {
-    Name        = "${var.global_name}-ecs-web-target-group"
-    environment = "${var.environment}"
-    module      = "ecs-cluster"
-    Automation  = "Terraform"
+    Name   = "WebTargetGroupForEcs"
+    module = "ecs-cluster"
   }
 }

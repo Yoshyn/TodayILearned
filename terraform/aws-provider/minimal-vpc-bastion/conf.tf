@@ -1,5 +1,20 @@
+# Check Tag best practice https://docs.aws.amazon.com/general/latest/gr/aws_tagging.html (Not apply here)
+# XX -> Bypass tag policies restriction for testing
+locals {
+  default_tags = {
+    Project = var.project_name
+    Env     = var.environment
+    OwnerXX = "TF-Providers"
+  }
+}
+
 provider "aws" {
-  region = var.region
+  region  = var.region
+  profile = var.aws_profile
+
+  default_tags {
+    tags = local.default_tags
+  }
 }
 
 # /!\ ALL the following has not been tested !

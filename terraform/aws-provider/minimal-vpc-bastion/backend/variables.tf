@@ -3,7 +3,7 @@ variable "region" {
   description = "AWS deployment region"
 }
 
-variable "global_name" {
+variable "project_name" {
   type        = string
   description = "Global name use to identify what we are doing."
 }

@@ -1,6 +1,6 @@
-variable "global_name" {
+variable "project_name" {
   type        = string
-  description = "The global name of the project"
+  description = "Global name use to identify what we are doing."
 }
 
 variable "environment" {

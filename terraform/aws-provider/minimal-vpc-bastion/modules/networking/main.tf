@@ -3,11 +3,10 @@ resource "aws_vpc" "vpc" {
   cidr_block           = var.vpc_cidr
   enable_dns_hostnames = true
   enable_dns_support   = true
+
   tags = {
-    Name        = "${var.global_name}-vpc"
-    environment = "${var.environment}"
-    module      = "networking"
-    Automation  = "Terraform"
+    Name   = "VirtualPrivateCloud"
+    module = "networking"
   }
 }
 
@@ -15,11 +14,10 @@ resource "aws_vpc" "vpc" {
 /* Internet gateway for the public subnet */
 resource "aws_internet_gateway" "ig" {
   vpc_id = aws_vpc.vpc.id
+
   tags = {
-    Name        = "${var.global_name}-igw"
-    environment = "${var.environment}"
-    module      = "networking"
-    Automation  = "Terraform"
+    Name   = "InternetGateway"
+    module = "networking"
   }
 }
 
@@ -34,11 +32,10 @@ resource "aws_nat_gateway" "nat" {
   allocation_id = aws_eip.nat_eip.id
   subnet_id     = element(aws_subnet.public_subnet.*.id, 0)
   depends_on    = [aws_internet_gateway.ig]
+
   tags = {
-    Name        = "${var.global_name}-nat"
-    environment = "${var.environment}"
-    module      = "networking"
-    Automation  = "Terraform"
+    Name   = "NetworkAdressTranslation"
+    module = "networking"
   }
 }
 
@@ -49,11 +46,10 @@ resource "aws_subnet" "public_subnet" {
   cidr_block              = element(var.public_subnets_cidr, count.index)
   availability_zone       = element(var.availability_zones, count.index)
   map_public_ip_on_launch = true
+
   tags = {
-    Name        = "${var.global_name}-${element(var.availability_zones, count.index)}-public-subnet-${count.index}"
-    environment = "${var.environment}"
-    module      = "networking"
-    Automation  = "Terraform"
+    Name   = "PublicSubnet${count.index}_${element(var.availability_zones, count.index)}"
+    module = "networking"
   }
 }
 
@@ -64,33 +60,30 @@ resource "aws_subnet" "private_subnet" {
   cidr_block              = element(var.private_subnets_cidr, count.index)
   availability_zone       = element(var.availability_zones, count.index)
   map_public_ip_on_launch = false
+
   tags = {
-    Name        = "${var.global_name}-${element(var.availability_zones, count.index)}-private-subnet-${count.index}"
-    environment = "${var.environment}"
-    module      = "networking"
-    Automation  = "Terraform"
+    Name   = "PrivateSubnet${count.index}_${element(var.availability_zones, count.index)}"
+    module = "networking"
   }
 }
 
 /* Routing table for private subnet */
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.vpc.id
+
   tags = {
-    Name        = "${var.global_name}-private-route-table"
-    environment = "${var.environment}"
-    module      = "networking"
-    Automation  = "Terraform"
+    Name   = "PrivateRouteTable"
+    module = "networking"
   }
 }
 
 /* Routing table for public subnet */
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.vpc.id
+
   tags = {
-    Name        = "${var.global_name}-public-route-table"
-    environment = "${var.environment}"
-    module      = "networking"
-    Automation  = "Terraform"
+    Name   = "PublicRouteTable"
+    module = "networking"
   }
 }
 
@@ -121,7 +114,7 @@ resource "aws_route_table_association" "private" {
 
 /*==== VPC's Default Security Group ======*/
 resource "aws_security_group" "default" {
-  name        = "${var.global_name}-Default"
+  name        = "${var.project_name}-Default"
   description = "Default security group to allow inbound/outbound from the VPC"
   vpc_id      = aws_vpc.vpc.id
   depends_on  = [aws_vpc.vpc]
@@ -137,10 +130,9 @@ resource "aws_security_group" "default" {
     protocol  = "-1"
     self      = true
   }
+
   tags = {
-    Name        = "${var.global_name}-default-sg"
-    environment = "${var.environment}"
-    module      = "networking"
-    Automation  = "Terraform"
+    Name   = "DefaultSecurityGroup"
+    module = "networking"
   }
 }
