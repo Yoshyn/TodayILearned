@@ -1,3 +1,9 @@
+# First you need an image to deploy on the container
+
+cd demo_application
+docker build -f Dockerfile -t yoshyn/demo-application .
+docker push yoshyn/demo-application:latest
+
 # https://gist.github.com/tstrohmeier/3da60392a5ea2eecbe32895e6624a2b4
 # https://medium.com/boltops/gentle-introduction-to-how-aws-ecs-works-with-example-tutorial-cea3d27ce63d
 # https://jmespath.org/examples.html
@@ -5,8 +11,10 @@
 set REGION "eu-west-1"
 
 set BASE_NAME "myProject"
-set CONTAINER_NAME "web"
-set CONTAINER_PORT 4567
+set CONTAINER_NAME "demo-web-app"
+set CONTAINER_PORT 8080
+set CONTAINER_IMAGE "yoshyn/demo-application:latest"
+
 set TASK_DEFINITION "$BASE_NAME-$CONTAINER_NAME"
 
 # Create the task (unrelated to ecs yet)
@@ -17,7 +25,7 @@ env -i bash -c "cat > ./$TASK_DEFINITION-task.json << EOF
   \"containerDefinitions\": [
     {
       \"name\": \"$CONTAINER_NAME\",
-      \"image\": \"tongueroo/sinatra:latest\",
+      \"image\": \"$CONTAINER_IMAGE\",
       \"cpu\": 128,
       \"memoryReservation\": 128,
       \"portMappings\": [
@@ -26,10 +34,6 @@ env -i bash -c "cat > ./$TASK_DEFINITION-task.json << EOF
           \"protocol\": \"tcp\"
         }
       ],
-      \"command\": [
-        \"ruby\", \"app.rb\"
-      ],
-      \"entryPoint\": [],
       \"essential\": true,
       \"environment\": [
       {

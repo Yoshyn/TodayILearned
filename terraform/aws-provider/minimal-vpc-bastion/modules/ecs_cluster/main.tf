@@ -161,6 +161,7 @@ resource "aws_launch_configuration" "ecs_instance_cfg" {
     echo 'ECS_CLUSTER=${aws_ecs_cluster.main.name}' >> /etc/ecs/ecs.config
     # Disable privileged containers.
     echo 'ECS_DISABLE_PRIVILEGED=true' >> /etc/ecs/ecs.config
+    echo 'ECS_ENABLE_CONTAINER_METADATA=true' >> /etc/ecs/ecs.config
   EOF
 
   lifecycle {
