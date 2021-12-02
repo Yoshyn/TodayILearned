@@ -39,8 +39,8 @@ resource "random_password" "database_root_password" {
   override_special = "!#$%&*()-_=+[]{}<>:?"
 }
 
-resource "aws_db_instance" "database" {
-  identifier        = "${lower(var.project_name)}-${lower(var.environment)}-${formatdate("YYYY-MM-DD", timestamp())}"
+resource "aws_db_instance" "default" {
+  identifier_prefix = "${lower(var.project_name)}-${lower(var.environment)}-"
   name              = var.database_name # (Optional) The name of the database to create when the DB instance is created.
   instance_class    = "db.t3.micro"     # https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.DBInstanceClass.html
   allocated_storage = 20                # The allocated storage in gibibytes.
@@ -73,17 +73,27 @@ resource "aws_db_instance" "database" {
   }
 }
 
-resource "aws_secretsmanager_secret" "database_private_key" {
-  name                    = "/${var.project_name}/${var.environment}/database/connection_string"
+resource "aws_secretsmanager_secret" "database_credentials" {
+  name                    = "/${var.project_name}/${var.environment}/database/credentials"
   recovery_window_in_days = 0
 
   tags = {
-    Name   = "DatabasePrivateKey"
+    Name   = "DatabaseCredentials"
     module = "database"
   }
 }
 
-resource "aws_secretsmanager_secret_version" "database_private_key_secret_version" {
-  secret_id     = aws_secretsmanager_secret.database_private_key.id
-  secret_string = "PGPASSWORD=${aws_db_instance.database.password} psql -Atx -U ${aws_db_instance.database.username} -h ${aws_db_instance.database.address} -p ${aws_db_instance.database.port}"
+resource "aws_secretsmanager_secret_version" "database_credentials" {
+  secret_id     = aws_secretsmanager_secret.database_credentials.id
+  secret_string = <<EOF
+    {
+      "username": "${aws_db_instance.default.username}",
+      "password": "${aws_db_instance.default.password}",
+      "engine":   "postgres",
+      "host":     "${aws_db_instance.default.endpoint}",
+      "port":     "${aws_db_instance.default.port}",
+      "dbname":   "${aws_db_instance.default.name}",
+      "dbInstanceIdentifier": "${aws_db_instance.default.id}"
+    }
+  EOF
 }

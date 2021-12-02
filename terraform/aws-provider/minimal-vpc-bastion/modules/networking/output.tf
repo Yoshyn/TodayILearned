@@ -21,3 +21,7 @@ output "security_groups_ids" {
 output "public_route_table" {
   value = aws_route_table.public.id
 }
+
+output "ssm_profile_for_ec2" {
+  value = aws_iam_instance_profile.ssm_instance_profile.name
+}

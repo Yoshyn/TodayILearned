@@ -83,15 +83,16 @@ resource "aws_instance" "bastion" {
   ami                         = data.aws_ami.amazon_linux_2.id
   key_name                    = aws_key_pair.bastion_key_pair.key_name
   instance_type               = "t3.micro"
-  security_groups             = [data.aws_security_group.default_sg.id, aws_security_group.allow_ssh_sg.id]
+  vpc_security_group_ids      = [data.aws_security_group.default_sg.id, aws_security_group.allow_ssh_sg.id]
   subnet_id                   = var.public_subnet_id
   associate_public_ip_address = true
+
+  iam_instance_profile = var.ssm_profile_for_ec2
 
   user_data = <<-EOL
   #!/bin/bash -xe
   sudo yum update -y
   sudo yum install -y nc
-  sudo yum install -y postgresql
   EOL
 
   tags = {

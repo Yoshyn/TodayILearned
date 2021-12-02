@@ -22,39 +22,43 @@ resource "aws_ecs_cluster" "main" {
 # container instances and register them to a cluster, you must create an IAM
 # role for your container instances to use.
 
-data "aws_iam_policy_document" "ec2_execution_policy" {
-  statement {
-    actions = ["sts:AssumeRole"]
-
-    principals {
-      type        = "Service"
-      identifiers = ["ec2.amazonaws.com"]
-    }
-  }
-}
-
-resource "aws_iam_role" "ec2_execution_role" {
-  name               = "ec2-execution-role"
-  assume_role_policy = data.aws_iam_policy_document.ec2_execution_policy.json
+resource "aws_iam_role" "ecs_instance_role" {
+  name = "ecs-instance-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
 
   tags = {
-    Name   = "Ec2ExecutionRole"
+    Name   = "EcsInstanceRole"
     module = "ecs-cluster"
   }
 }
 
-resource "aws_iam_role_policy_attachment" "ec2_execution_role" {
-  role       = aws_iam_role.ec2_execution_role.name
+resource "aws_iam_role_policy_attachment" "ecs_instance_role" {
+  role       = aws_iam_role.ecs_instance_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
 }
 
+resource "aws_iam_role_policy_attachment" "assume_role_policy_document" {
+  role       = aws_iam_role.ecs_instance_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
 
-resource "aws_iam_instance_profile" "ec2_execution_profile" {
-  name = "ec2-execution-profile"
-  role = aws_iam_role.ec2_execution_role.name
+resource "aws_iam_instance_profile" "ecs_instance_profile" {
+  name = "ecs-instance-profile"
+  role = aws_iam_role.ecs_instance_role.name
 
   tags = {
-    Name   = "Ec2ExecutionProfile"
+    Name   = "EcsInstanceProfile"
     module = "ecs-cluster"
   }
 }
@@ -130,13 +134,13 @@ data "aws_ami" "ecs_ami" {
 
   filter {
     name   = "name"
-    values = ["amzn-ami-*-amazon-ecs-optimized"]
+    values = ["amzn2-ami-ecs-hvm-*-x86_64-ebs"]
   }
 }
 
 resource "aws_launch_configuration" "ecs_instance_cfg" {
   name_prefix          = "${var.project_name}-ecs-cfg-"
-  iam_instance_profile = aws_iam_instance_profile.ec2_execution_profile.name
+  iam_instance_profile = aws_iam_instance_profile.ecs_instance_profile.name
 
   instance_type               = "t3.micro"
   image_id                    = data.aws_ami.ecs_ami.image_id
@@ -155,14 +159,18 @@ resource "aws_launch_configuration" "ecs_instance_cfg" {
     encrypted   = true
   }
 
+  # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-agent-config.html
   user_data = <<EOF
     #!/bin/bash
+    sudo yum update -y
     # The cluster this agent should check into.
     echo 'ECS_CLUSTER=${aws_ecs_cluster.main.name}' >> /etc/ecs/ecs.config
     # Disable privileged containers.
     echo 'ECS_DISABLE_PRIVILEGED=true' >> /etc/ecs/ecs.config
     echo 'ECS_ENABLE_CONTAINER_METADATA=true' >> /etc/ecs/ecs.config
+    echo 'ECS_CONTAINER_INSTANCE_PROPAGATE_TAGS_FROM=ec2_instance' >> /etc/ecs/ecs.config
   EOF
+  # Also available : ECS_CONTAINER_INSTANCE_TAGS={"tag_key": "tag_value"}
 
   lifecycle {
     create_before_destroy = true

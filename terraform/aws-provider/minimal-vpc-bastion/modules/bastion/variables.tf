@@ -22,3 +22,8 @@ variable "bastion_key_name" {
   type        = string
   description = "The name of the bastion key."
 }
+
+variable "ssm_profile_for_ec2" {
+  type        = string
+  description = "Name of the ssm profile to associate to the ec2."
+}

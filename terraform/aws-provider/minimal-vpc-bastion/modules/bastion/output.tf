@@ -7,6 +7,10 @@ output "public_ip" {
   value = aws_instance.bastion.public_ip
 }
 
+output "id" {
+  value = aws_instance.bastion.id
+}
+
 # An alternative that avoids that is to save the pem file in AWS Secrets Manager, or encrypted in S3, and provide a command to fetch it & create local file.
 resource "local_file" "bastion_private_key" {
   filename          = pathexpand("~/.ssh/${var.bastion_key_name}.pem")
