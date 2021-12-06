@@ -22,11 +22,12 @@ output "rds_session" {
 }
 
 ## Connect to ECS nodes (SSM) :
+# Please check deploy.fish to find more usefull command.
 output "ecs_ssm_session" {
   value = <<EOF
     set ECS_NODES (aws ec2 describe-instances --region ${var.region} --filters 'Name=tag:Project,Values=${var.project_name}' 'Name=tag:module,Values=ecs-cluster' 'Name=tag:Env,Values=${var.environment}' 'Name=instance-state-name,Values=running' --query 'Reservations[].Instances[].{InstanceId:InstanceId, PrivateDnsName:PrivateDnsName}')
-    set FIRST_ECS_NODE_DNS (echo $ECS_NODES | jq -r 'first.PrivateDnsName')
-    aws ssm start-session --target $FIRST_ECS_NODE_DNS --region ${var.region}"
+    set INSTANCE_ID (echo $ECS_NODES | jq -r 'first.InstanceId')
+    aws ssm start-session --target $INSTANCE_ID --region ${var.region}
   EOF
 }
 
