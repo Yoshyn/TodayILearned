@@ -6,8 +6,4 @@
 
 > terraform destroy -auto-approve
 
-# You did not read the outputs of TF ? here is saver time script :
-
-Connect to the bastion :
-set BASTION_ID (aws ec2 describe-instances --region eu-west-1 --filters 'Name=tag:Project,Values=DEMO' 'Name=tag:module,Values=bastion' 'Name=tag:Env,Values=test' 'Name=instance-state-name,Values=running' --query 'Reservations[].Instances[].InstanceId' | jq -r 'first')
-aws ssm start-session --target $BASTION_ID --region eu-west-1
+# Then check the output of terraform & the file ecs_services/deploy.fish

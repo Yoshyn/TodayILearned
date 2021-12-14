@@ -90,7 +90,7 @@ resource "aws_secretsmanager_secret_version" "database_credentials" {
       "username": "${aws_db_instance.default.username}",
       "password": "${aws_db_instance.default.password}",
       "engine":   "postgres",
-      "host":     "${aws_db_instance.default.endpoint}",
+      "host":     "${aws_db_instance.default.address}",
       "port":     "${aws_db_instance.default.port}",
       "dbname":   "${aws_db_instance.default.name}",
       "dbInstanceIdentifier": "${aws_db_instance.default.id}"

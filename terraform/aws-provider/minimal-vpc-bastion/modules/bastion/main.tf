@@ -89,6 +89,11 @@ resource "aws_instance" "bastion" {
 
   iam_instance_profile = var.ssm_profile_for_ec2
 
+  root_block_device {
+    volume_type = "gp3"
+    volume_size = 12
+  }
+
   user_data = <<-EOL
   #!/bin/bash -xe
   sudo yum update -y

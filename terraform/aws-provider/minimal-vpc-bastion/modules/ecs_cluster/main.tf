@@ -11,123 +11,6 @@ resource "aws_ecs_cluster" "main" {
   }
 }
 
-#
-# IAM
-#
-
-# Docs
-# https://docs.aws.amazon.com/AmazonECS/latest/developerguide/instance_IAM_role.html
-# Amazon EC2 run the Amazon ECS container agent and require an IAM role for
-# the service to know that the agent belongs to you. Before you launch
-# container instances and register them to a cluster, you must create an IAM
-# role for your container instances to use.
-
-resource "aws_iam_role" "ecs_instance_role" {
-  name = "ecs-instance-role"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "ec2.amazonaws.com"
-        }
-      }
-    ]
-  })
-
-  tags = {
-    Name   = "EcsInstanceRole"
-    module = "ecs-cluster"
-  }
-}
-
-resource "aws_iam_role_policy_attachment" "ecs_instance_role" {
-  role       = aws_iam_role.ecs_instance_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
-}
-
-resource "aws_iam_role_policy_attachment" "assume_role_policy_document" {
-  role       = aws_iam_role.ecs_instance_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-}
-
-resource "aws_iam_instance_profile" "ecs_instance_profile" {
-  name = "ecs-instance-profile"
-  role = aws_iam_role.ecs_instance_role.name
-
-  tags = {
-    Name   = "EcsInstanceProfile"
-    module = "ecs-cluster"
-  }
-}
-
-#
-# Security Group
-#
-
-resource "aws_security_group" "internal_only" {
-  name        = "${var.project_name}-ecs-internal-only-sg"
-  description = "Allow internal traffic to docker servers"
-  vpc_id      = var.vpc_id
-
-  ingress {
-    from_port = 0
-    to_port   = 0
-    protocol  = "-1"
-    self      = true
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name   = "EcsInternalOnlySecurityGroup"
-    module = "ecs-cluster"
-  }
-}
-
-resource "aws_security_group" "http_access" {
-  name        = "${var.project_name}-http-access-sg"
-  description = "Allow external traffic to port 80 & 443"
-  vpc_id      = var.vpc_id
-
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name   = "HttpAccessSecurityGroup"
-    module = "ecs-cluster"
-  }
-}
-
-#
-# EC2
-#
-
 data "aws_ami" "ecs_ami" {
   most_recent = true
   owners      = ["amazon"]
@@ -159,16 +42,19 @@ resource "aws_launch_configuration" "ecs_instance_cfg" {
     encrypted   = true
   }
 
-  # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-agent-config.html
+  # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-agent-config.html  
   user_data = <<EOF
     #!/bin/bash
     sudo yum update -y
-    # The cluster this agent should check into.
-    echo 'ECS_CLUSTER=${aws_ecs_cluster.main.name}' >> /etc/ecs/ecs.config
-    # Disable privileged containers.
-    echo 'ECS_DISABLE_PRIVILEGED=true' >> /etc/ecs/ecs.config
-    echo 'ECS_ENABLE_CONTAINER_METADATA=true' >> /etc/ecs/ecs.config
-    echo 'ECS_CONTAINER_INSTANCE_PROPAGATE_TAGS_FROM=ec2_instance' >> /etc/ecs/ecs.config
+    cat << EOCAT > /etc/ecs/ecs.config
+    ECS_CLUSTER=${aws_ecs_cluster.main.name}
+    ECS_DATADIR=/data
+    ECS_DISABLE_PRIVILEGED=true
+    ECS_ENABLE_CONTAINER_METADATA=true
+    ECS_ENABLE_TASK_IAM_ROLE=true
+    ECS_LOGFILE=/log/ecs-agent.log
+    ECS_CONTAINER_INSTANCE_PROPAGATE_TAGS_FROM=ec2_instance
+    EOCAT
   EOF
   # Also available : ECS_CONTAINER_INSTANCE_TAGS={"tag_key": "tag_value"}
 
@@ -210,85 +96,5 @@ resource "aws_autoscaling_group" "ecs_asg" {
       value               = tag.value
       propagate_at_launch = true
     }
-  }
-}
-
-data "aws_iam_policy_document" "ecs_task_exection_role_policy" {
-  statement {
-    actions = ["sts:AssumeRole"]
-
-    principals {
-      type        = "Service"
-      identifiers = ["ecs.amazonaws.com"]
-    }
-  }
-}
-
-resource "aws_iam_role" "ecs_task_exection_role" {
-  name               = "ecs-task-execution-role"
-  assume_role_policy = data.aws_iam_policy_document.ecs_task_exection_role_policy.json
-
-  tags = {
-    Name   = "EcsExecutionRole"
-    module = "ecs-cluster"
-  }
-}
-
-resource "aws_iam_role_policy_attachment" "ecs_task_exection_role_policy_attachment" {
-  role       = aws_iam_role.ecs_task_exection_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole"
-}
-
-resource "aws_lb" "ecs_alb" {
-  name               = "${var.project_name}-ecs-alb"
-  internal           = false
-  load_balancer_type = "application"
-  security_groups    = [aws_security_group.internal_only.id, aws_security_group.http_access.id]
-  subnets            = var.public_subnets_ids
-
-
-  drop_invalid_header_fields = true
-  idle_timeout               = 60
-
-  enable_deletion_protection = false
-  enable_http2               = true
-
-  tags = {
-    Name   = "AlbForEcs"
-    module = "ecs-cluster"
-  }
-}
-
-resource "aws_alb_listener" "ecs_alb_listener" {
-  load_balancer_arn = aws_lb.ecs_alb.arn
-
-  port     = "80"
-  protocol = "HTTP"
-
-  default_action {
-    target_group_arn = aws_alb_target_group.ecs_web_target_group.arn
-    type             = "forward"
-  }
-}
-
-data "aws_vpc" "vpc" {
-  id = var.vpc_id
-}
-
-resource "aws_alb_target_group" "ecs_web_target_group" {
-  name     = "${var.project_name}-ecs-web-target-group"
-  port     = 80
-  protocol = "HTTP"
-  vpc_id   = data.aws_vpc.vpc.id
-
-  health_check {
-    healthy_threshold   = 5
-    unhealthy_threshold = 2
-    timeout             = 5
-  }
-
-  tags = {
-    Name   = "WebTargetGroupForEcs"
-    module = "ecs-cluster"
   }
 }

@@ -43,7 +43,7 @@ module "ecs_cluster" {
   vpc_id              = module.networking.vpc_id
   private_subnets_ids = module.networking.private_subnets_ids
   public_subnets_ids  = module.networking.public_subnets_ids
-  depends_on          = [module.networking]
+  depends_on          = [module.networking, module.database] # Database here is due to an iam role created for the ecs-task
 }
 
 module "budget" {
