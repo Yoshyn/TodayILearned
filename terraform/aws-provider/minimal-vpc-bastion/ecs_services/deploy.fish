@@ -100,7 +100,7 @@ set LOAD_BALANCER_ARN (aws elbv2 describe-load-balancers --region $REGION --quer
 set LOAD_BALANCER_TARGET_GROUP_ARN (aws elbv2 describe-target-groups --load-balancer-arn $LOAD_BALANCER_ARN --region $REGION --query "TargetGroups[?(Protocol=='HTTP')].[TargetGroupArn]" | jq -r 'first | first')
 
 # This role came from TF (modules/ecs_cluster/main.tf:228)
-set ECS_SERVICE_ROLE_NAME "ecs-srv-execution-role"
+set ECS_SERVICE_ROLE_NAME $PROJECT_NAME"-"$ENV"-"ecs-srv-execution-role"
 # Check if it exist : aws iam list-roles --region $REGION --query "Roles[?(RoleName == '$ECS_SERVICE_ROLE_NAME')]"
 
 set CLUSTER_ARN (aws ecs list-clusters --region $REGION --query "clusterArns[?contains(@, 'DEMO')]" | jq -r 'first')

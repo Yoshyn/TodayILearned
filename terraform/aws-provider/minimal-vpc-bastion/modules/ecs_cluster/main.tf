@@ -22,7 +22,7 @@ data "aws_ami" "ecs_ami" {
 }
 
 resource "aws_launch_configuration" "ecs_instance_cfg" {
-  name_prefix          = "${var.project_name}-ecs-cfg-"
+  name_prefix          = "${var.project_name}-${var.environment}-ecs-cfg-"
   iam_instance_profile = aws_iam_instance_profile.ecs_instance_profile.name
 
   instance_type               = "t3.micro"
@@ -66,7 +66,7 @@ resource "aws_launch_configuration" "ecs_instance_cfg" {
 data "aws_default_tags" "default" {}
 
 resource "aws_autoscaling_group" "ecs_asg" {
-  name_prefix = "${var.project_name}-ecs-asg-"
+  name_prefix = "${var.project_name}-${var.environment}-ecs-asg-"
 
   desired_capacity = var.desired_capacity
   max_size         = var.max_size

@@ -1,5 +1,5 @@
 resource "aws_security_group" "internal_only" {
-  name        = "${var.project_name}-ecs-internal-only-sg"
+  name        = "${var.project_name}-${var.environment}-ecs-internal-only-sg"
   description = "Allow internal traffic to docker servers"
   vpc_id      = var.vpc_id
 
@@ -24,7 +24,7 @@ resource "aws_security_group" "internal_only" {
 }
 
 resource "aws_security_group" "http_access" {
-  name        = "${var.project_name}-http-access-sg"
+  name        = "${var.project_name}-${var.environment}-http-access-sg"
   description = "Allow external traffic to port 80 & 443"
   vpc_id      = var.vpc_id
 

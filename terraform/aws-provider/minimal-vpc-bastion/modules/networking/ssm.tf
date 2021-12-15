@@ -4,7 +4,7 @@
 # aws ssm start-session --target MY_INSTANCE_ID --region eu-west-1
 
 resource "aws_iam_role" "ssm_instance_role" {
-  name        = "ssm_instance_role"
+  name        = "${var.project_name}-${var.environment}-ssm_instance_role"
   description = "SSM role for EC2 resources"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"

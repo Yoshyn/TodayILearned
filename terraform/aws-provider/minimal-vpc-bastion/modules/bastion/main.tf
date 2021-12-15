@@ -70,7 +70,7 @@ data "aws_ami" "amazon_linux_2" {
 data "aws_security_group" "default_sg" {
   filter {
     name   = "group-name"
-    values = ["${var.project_name}-Default"]
+    values = ["${var.project_name}-${var.environment}-Default"]
   }
 
   filter {
@@ -104,4 +104,8 @@ resource "aws_instance" "bastion" {
     Name   = "BastionEC2"
     module = "bastion"
   }
+
+  # lifecycle {
+  #   ignore_changes = [ami, ]
+  # }
 }

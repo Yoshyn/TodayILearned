@@ -3,7 +3,7 @@ data "aws_vpc" "vpc" {
 }
 
 resource "aws_lb" "ecs_alb" {
-  name               = "${var.project_name}-ecs-alb"
+  name               = "${var.project_name}-${var.environment}-ecs-alb"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.internal_only.id, aws_security_group.http_access.id]

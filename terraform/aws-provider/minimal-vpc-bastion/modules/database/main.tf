@@ -4,7 +4,7 @@ data "aws_vpc" "vpc" {
 
 /*==== VPC's RDS Security Group ======*/
 resource "aws_security_group" "database_sg" {
-  name        = "${var.project_name}-database-sg"
+  name        = "${var.project_name}-${var.environment}-database-sg"
   description = "Allow DB access"
   vpc_id      = var.vpc_id
 
@@ -23,7 +23,7 @@ resource "aws_security_group" "database_sg" {
 }
 
 resource "aws_db_subnet_group" "default" {
-  name       = "${lower(var.project_name)}_${lower(var.environment)}_default"
+  name       = "${lower(var.project_name)}-${lower(var.environment)}-default"
   subnet_ids = var.private_subnets_ids
 
   tags = {

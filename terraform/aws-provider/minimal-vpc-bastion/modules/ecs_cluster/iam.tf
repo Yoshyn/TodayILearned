@@ -3,7 +3,7 @@
 ###########################################################################
 
 resource "aws_iam_role" "ecs_instance_role" {
-  name = "ecs-instance-role"
+  name = "${var.project_name}-${var.environment}-ecs-instance-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -47,7 +47,7 @@ resource "aws_iam_instance_profile" "ecs_instance_profile" {
 ######################################################
 
 resource "aws_iam_role" "ecs_srv_execution_role" {
-  name = "ecs-srv-execution-role"
+  name = "${var.project_name}-${var.environment}-ecs-srv-execution-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [

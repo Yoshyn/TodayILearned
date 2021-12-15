@@ -1,12 +1,35 @@
-# Check Tag best practice https://docs.aws.amazon.com/general/latest/gr/aws_tagging.html (Not apply here)
-# XX -> Bypass tag policies restriction for testing
+#################################111###########################
+### Get some customs informations before the tag generation ###
+####################################111########################
+
+data "external" "get_tag_user_name" {
+  program = ["sh", "${path.module}/scripts/get_tag_user_name.sh"]
+  query   = { aws_profile = var.aws_profile }
+}
+data "external" "get_tag_version" {
+  program = ["sh", "${path.module}/scripts/get_tag_version.sh"]
+}
+
+
+##################################################################
+###                Setup default Tags                          ###
+### Check Tag best practices :                                 ###
+# https://docs.aws.amazon.com/general/latest/gr/aws_tagging.html #
+##################################################################
+
 locals {
   default_tags = {
-    Project = var.project_name
-    Env     = var.environment
-    OwnerXX = "TF-Providers"
+    Project      = var.project_name
+    Env          = var.environment
+    OwnerXX      = "TF-Providers" # XX -> Hack to bypass company tag policies restriction (testing purpose)
+    DeployerName = data.external.get_tag_user_name.result.username
+    Version      = data.external.get_tag_version.result.version
   }
 }
+
+#############################################################
+###               Setup AWS Provider                      ###
+#############################################################
 
 provider "aws" {
   region  = var.region
