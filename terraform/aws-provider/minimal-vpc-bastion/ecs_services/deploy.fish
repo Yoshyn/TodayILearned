@@ -96,11 +96,11 @@ aws ecs register-task-definition --cli-input-json file://$TASK_DEFINITION-task.j
 
 set SERVICE_NAME "$DEFINITION_PREFIX-$CONTAINER_NAME"
 
-set LOAD_BALANCER_ARN (aws elbv2 describe-load-balancers --region $REGION --query "LoadBalancers[?(LoadBalancerName == '$PROJECT_NAME-ecs-alb')].[LoadBalancerName,DNSName,LoadBalancerArn]" | jq -r 'first | last')
+set LOAD_BALANCER_ARN (aws elbv2 describe-load-balancers --region $REGION --query "LoadBalancers[?(LoadBalancerName == '$PROJECT_NAME-$ENV-ecs-alb')].[LoadBalancerName,DNSName,LoadBalancerArn]" | jq -r 'first | last')
 set LOAD_BALANCER_TARGET_GROUP_ARN (aws elbv2 describe-target-groups --load-balancer-arn $LOAD_BALANCER_ARN --region $REGION --query "TargetGroups[?(Protocol=='HTTP')].[TargetGroupArn]" | jq -r 'first | first')
 
 # This role came from TF (modules/ecs_cluster/main.tf:228)
-set ECS_SERVICE_ROLE_NAME $PROJECT_NAME"-"$ENV"-"ecs-srv-execution-role"
+set ECS_SERVICE_ROLE_NAME $PROJECT_NAME"-"$ENV"-ecs-srv-execution-role"
 # Check if it exist : aws iam list-roles --region $REGION --query "Roles[?(RoleName == '$ECS_SERVICE_ROLE_NAME')]"
 
 set CLUSTER_ARN (aws ecs list-clusters --region $REGION --query "clusterArns[?contains(@, 'DEMO')]" | jq -r 'first')
@@ -132,7 +132,7 @@ aws ecs create-service --cli-input-json file://$SERVICE_NAME-service.json --regi
 # aws ecs delete-service --cluster $CLUSTER_NAME --service $SERVICE_NAME --region $REGION --force
 
 # Step 4 : Let's check that everything work : 
-open "http://"(aws elbv2 describe-load-balancers --region $REGION --query "LoadBalancers[?(LoadBalancerName == '$PROJECT_NAME-ecs-alb')].[DNSName] | [0][0]" --out text)
+open "http://"(aws elbv2 describe-load-balancers --region $REGION --query "LoadBalancers[?(LoadBalancerName == '$PROJECT_NAME-$ENV-ecs-alb')].[DNSName] | [0][0]" --out text)
 # Note : If you refresh often, the instance_id will change. The ALB work well.
 
 
