@@ -95,9 +95,9 @@ resource "aws_instance" "bastion" {
   }
 
   user_data = <<-EOL
-  #!/bin/bash -xe
-  sudo yum update -y
-  sudo yum install -y nc
+    #!/bin/bash -xe
+    sudo yum update -y
+    sudo yum install -y nc
   EOL
 
   tags = {

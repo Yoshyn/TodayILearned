@@ -37,6 +37,12 @@ variable "private_subnets_cidr" {
   default     = ["10.0.10.0/24", "10.0.11.0/24"]
 }
 
+variable "isolated_subnets_cidr" {
+  type        = list(any)
+  description = "The CIDR block for the private subnet"
+  default     = ["10.0.100.0/24"]
+}
+
 variable "budget_subscriber_email_addresses" {
   type        = list(string)
   description = "List of email address to send the budget alert"

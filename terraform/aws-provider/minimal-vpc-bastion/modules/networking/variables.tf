@@ -23,6 +23,11 @@ variable "private_subnets_cidr" {
   description = "The CIDR block for the private subnet"
 }
 
+variable "isolated_subnets_cidr" {
+  type        = list(any)
+  description = "The CIDR block for the isolated subnet"
+}
+
 variable "region" {
   type        = string
   description = "The region to launch the bastion host"

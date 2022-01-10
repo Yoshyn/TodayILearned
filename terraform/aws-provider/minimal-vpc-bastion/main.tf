@@ -4,14 +4,15 @@ data "aws_availability_zones" "available" {
 }
 
 module "networking" {
-  source               = "./modules/networking"
-  region               = var.region
-  project_name         = var.project_name
-  environment          = var.environment
-  vpc_cidr             = var.vpc_cidr
-  public_subnets_cidr  = var.public_subnets_cidr
-  private_subnets_cidr = var.private_subnets_cidr
-  availability_zones   = data.aws_availability_zones.available.names
+  source                = "./modules/networking"
+  region                = var.region
+  project_name          = var.project_name
+  environment           = var.environment
+  vpc_cidr              = var.vpc_cidr
+  public_subnets_cidr   = var.public_subnets_cidr
+  private_subnets_cidr  = var.private_subnets_cidr
+  isolated_subnets_cidr = var.isolated_subnets_cidr
+  availability_zones    = data.aws_availability_zones.available.names
 }
 
 module "bastion" {
