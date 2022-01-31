@@ -7,3 +7,10 @@
 > terraform destroy -auto-approve
 
 # Then check the output of terraform & the file ecs_services/deploy.fish
+
+
+
+
+# TODO BACKEND WITH CF
+
+https://mikevanbuskirk.io/posts/terraform-backend-with-cloudformation/
