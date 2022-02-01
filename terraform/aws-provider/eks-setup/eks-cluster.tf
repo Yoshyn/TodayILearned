@@ -42,7 +42,10 @@ module "eks" {
 # so we need to ensure fargate profiles and self-managed node roles are added
 ################################################################################
 
-data "aws_eks_cluster_auth" "this" {
+
+# Maybe use kubernete provider here should be better ?
+
+data "aws_eks_cluster_auth" "cluster" {
   name = module.eks.cluster_id
 }
 
@@ -68,7 +71,7 @@ locals {
     users = [{
       name = "terraform"
       user = {
-        token = data.aws_eks_cluster_auth.this.token
+        token = data.aws_eks_cluster_auth.cluster.token
       }
     }]
   })
@@ -96,7 +99,6 @@ resource "null_resource" "apply_aws_auth_config_map" {
     interpreter = ["/bin/bash", "-c"]
     environment = {
       KUBECONFIG = self.triggers.kubeconfig
-      AUTH_PATCH = base64encode(module.eks.aws_auth_configmap_yaml)
     }
     command = self.triggers.cmd_patch
   }

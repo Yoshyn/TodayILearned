@@ -34,5 +34,6 @@ output "kubeconfig" {
   // aws eks --region (terraform output -raw region) update-kubeconfig --name (terraform output -raw cluster_name)
 }
 
-
-
+output "load_balancer_dns" {
+  value = aws_lb.eks_alb.dns_name
+}
