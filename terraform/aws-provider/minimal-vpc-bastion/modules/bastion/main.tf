@@ -29,6 +29,10 @@ resource "aws_secretsmanager_secret_version" "bastion_private_key_secret_version
   secret_string = tls_private_key.bastion_private_key.private_key_pem
 }
 
+# data "http" "myip" {
+#   url = "https://checkip.amazonaws.com"
+# }
+
 /*==== VPC's Bastion Security Group ======*/
 resource "aws_security_group" "allow_ssh_sg" {
   name        = "${var.project_name}-Allow-ssh"
@@ -40,6 +44,7 @@ resource "aws_security_group" "allow_ssh_sg" {
     from_port   = 22
     to_port     = 22
     cidr_blocks = ["0.0.0.0/0"]
+    # cidr_blocks = ["${chomp(data.http.myip.body)}/32"]
   }
 
   egress {
