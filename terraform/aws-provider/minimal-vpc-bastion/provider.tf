@@ -40,7 +40,8 @@ provider "aws" {
   }
 }
 
-# /!\ ALL the following has not been tested !
+# Set a backend if needed with CF :
+# https://mikevanbuskirk.io/posts/terraform-backend-with-cloudformation/
 
 # Need to have a S3 bucket to store the state on AWS : 
 # cd backend && terraform init && terraform apply -auto-approve
