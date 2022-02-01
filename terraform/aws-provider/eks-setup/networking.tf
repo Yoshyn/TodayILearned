@@ -23,10 +23,6 @@ module "vpc" {
   }
 }
 
-# data "http" "myip" {
-#   url = "https://checkip.amazonaws.com"
-# }
-
 resource "aws_security_group" "default" {
   name   = "${local.cluster_name}-Default"
   vpc_id = module.vpc.vpc_id
@@ -37,14 +33,6 @@ resource "aws_security_group" "default" {
     protocol  = "-1"
     self      = true
   }
-
-  # Is it needed ? 
-  # ingress {
-  #   from_port   = "22"
-  #   to_port     = "22"
-  #   protocol    = "tcp"
-  #   cidr_blocks = ["${chomp(data.http.myip.body)}/32"]
-  # }
 
   egress {
     from_port   = 0
