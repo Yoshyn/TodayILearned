@@ -1,0 +1,17 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+  - role: worker
+  - role: worker
+
+# # Use Calico instead of kindnet 
+# networking:
+#   disableDefaultCNI: true # disable kindnet
+#   podSubnet: "10.245.0.0/16"
+#   serviceSubnet: "10.97.0.0/12"
+# # Then apply the manifest of calico :
+# # kubectl apply -f https://docs.projectcalico.org/latest/manifests/calico.yaml
+
+# # Finally, test the network & network policy :
+# # https://projectcalico.docs.tigera.io/getting-started/kubernetes/hardway/test-networking

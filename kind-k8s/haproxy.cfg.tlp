@@ -1,0 +1,27 @@
+global
+  log stdout format raw local0 info
+
+defaults
+  timeout connect 10s
+  timeout client 30s
+  timeout server 30s
+  log global
+  mode http
+  option httplog
+
+frontend http_80
+  bind :80
+  default_backend webservers
+
+# frontend http_443
+#   bind :443 ssl crt /etc/ssl/yourCertificate
+#   default_backend webservers
+
+# Use docker DNS to dokimi-cluster-* (172.20.0.*)
+backend webservers
+  balance roundrobin
+  http-request set-header X-Forwarded-Port %[dst_port]
+  http-request add-header X-Forwarded-Proto https if { ssl_fc }
+  server controle_plane dokimi-cluster-control-plane:$ISTIO_HTTP_NPORT cookie controle_plane check
+  server worker_2       dokimi-cluster-worker:$ISTIO_HTTP_NPORT cookie worker_2 check
+  server worker_1       dokimi-cluster-worker2:$ISTIO_HTTP_NPORT cookie worker_1 check 
