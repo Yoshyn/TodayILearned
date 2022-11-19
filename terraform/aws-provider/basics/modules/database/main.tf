@@ -39,9 +39,25 @@ resource "random_password" "database_root_password" {
   override_special = "!#$%&*()-_=+[]{}<>:?"
 }
 
+# https://aws.amazon.com/fr/blogs/database/working-with-rds-and-aurora-postgresql-logs-part-1/
+resource "aws_db_parameter_group" "default" {
+  name   = "${lower(var.project_name)}-db-postgres13-parameter-group"
+  family = "postgres13"
+
+  parameter {
+    name  = "log_connections"
+    value = "1"
+  }
+
+  parameter {
+    name  = "log_disconnections"
+    value = "1"
+  }
+}
+
 resource "aws_db_instance" "default" {
   identifier_prefix = "${lower(var.project_name)}-${lower(var.environment)}-"
-  name              = var.database_name # (Optional) The name of the database to create when the DB instance is created.
+  db_name           = var.database_name # (Optional) The name of the database to create when the DB instance is created.
   instance_class    = "db.t3.micro"     # https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.DBInstanceClass.html
   allocated_storage = 20                # The allocated storage in gibibytes.
   engine            = "postgres"        # "postgres", "mysql", "aurora", etc. https://docs.aws.amazon.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html
@@ -51,6 +67,10 @@ resource "aws_db_instance" "default" {
   # and will be stored in the state file in raw text.
   username = var.database_root_username
   password = var.database_root_password != null ? var.database_root_password : element(random_password.database_root_password, 0).result
+
+  iam_database_authentication_enabled = true
+
+  # monitoring_interval = 5
 
   publicly_accessible = false
 
@@ -66,6 +86,8 @@ resource "aws_db_instance" "default" {
   db_subnet_group_name   = aws_db_subnet_group.default.name
 
   skip_final_snapshot = true
+
+  parameter_group_name = aws_db_parameter_group.default.name
 
   tags = {
     Name   = "DatabaseInstance"
@@ -97,3 +119,24 @@ resource "aws_secretsmanager_secret_version" "database_credentials" {
     }
   EOF
 }
+
+# Apply this policy to each user you whant to have access to the user database_role_1
+# data "aws_caller_identity" "current" {}
+# data "aws_region" "current" {}
+# resource "aws_iam_policy" "db-policy" {
+#   name   = "aurora-db-policy"
+#   policy = <<EOF
+#   {
+#     "Version": "2012-10-17",
+#     "Statement": [
+#       {
+#         "Effect": "Allow",
+#         "Action": [ "rds-db:connect" ],
+#         "Resource": [
+#           "arn:aws:rds-db:${data.aws_region.current}:${data.aws_caller_identity.current.account_id}:dbuser:${aws_db_instance.default.resource_id}/database_role_1"
+#         ]
+#       }
+#     ]
+#   }
+#   EOF
+# }

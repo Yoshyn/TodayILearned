@@ -8,17 +8,16 @@ output "bastion_ssm_session" {
   value = "aws ssm start-session --target ${module.bastion.id} --region ${var.region}"
 }
 
-## Connect to Database (SSH & psql)
+# Connect to Database (SSH & psql)
 output "rds_session" {
-  value = nonsensitive(<<EOF
+  value = <<EOF
     # First let's start a ssh tunnel through the bastion
     ssh -i ~/.ssh/bastion-${var.project_name}-key-pair.pem -p 22 -L '*:5432:${module.database.address}:${module.database.port}' ec2-user@${module.bastion.public_ip}
     # Then retrieve rds credential stored in secret manager
-    aws secretsmanager get-secret-value --secret-id '/${var.project_name}/${var.environment}/database/credentials' --region ${var.region} | jq -r '.SecretString' | jq
+    set PGPASSWORD (aws secretsmanager get-secret-value --secret-id '/${var.project_name}/${var.environment}/database/credentials' --region ${var.region} | jq -r '.SecretString' | jq -r '.password')
     # Finaly launch psql (through docker if not installed)
-    docker run -it --rm postgres:latest psql -h host.docker.internal -p 5432 -U ${module.database.username}
+    docker run -it --env PGPASSWORD=$PGPASSWORD --rm postgres:latest psql -h host.docker.internal -p 5432 -U postgres
   EOF
-  )
 }
 
 ## Connect to ECS nodes (SSM) :

@@ -102,7 +102,7 @@ resource "aws_instance" "bastion" {
   user_data = <<-EOL
     #!/bin/bash -xe
     sudo yum update -y
-    sudo yum install -y nc
+    sudo yum install -y nc postgres
   EOL
 
   tags = {

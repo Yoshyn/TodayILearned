@@ -4,18 +4,6 @@ metadata:
   name: demo
 
 ---
-kind: Service
-apiVersion: v1
-metadata:
-  name: health-check-service
-  namespace: default
-spec:
-  selector:
-    app: health-check
-  ports:
-    - port: 5678
-
----
 kind: Pod
 apiVersion: v1
 metadata:

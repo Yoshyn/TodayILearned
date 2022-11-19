@@ -1,9 +1,10 @@
-# Use helm provider to configure nginx after the creation of the cluster.
-# It's avoid to follow all the step here :
-# https://docs.nginx.com/nginx-ingress-controller/installation/installation-with-manifests/
+# # Use helm provider to configure nginx after the creation of the cluster.
+# # It's avoid to follow all the step here :
+# # https://docs.nginx.com/nginx-ingress-controller/installation/installation-with-manifests/
 
 provider "helm" {
   kubernetes {
+    config_path            = "~/.kube/config" # in case of error
     host                   = module.eks.cluster_endpoint
     token                  = data.aws_eks_cluster_auth.cluster.token
     cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
@@ -14,7 +15,7 @@ provider "helm" {
 # https://docs.nginx.com/nginx-ingress-controller/installation/installation-with-helm/
 resource "helm_release" "ingress" {
   name             = "helm-release"
-  namespace        = "nginx-mesh"
+  namespace        = "nginx-system"
   create_namespace = true
   force_update     = true
   atomic           = true
@@ -22,8 +23,6 @@ resource "helm_release" "ingress" {
   # https://github.com/nginxinc/helm-charts
   repository = "https://helm.nginx.com/stable"
   chart      = "nginx-ingress"
-
-  # alb.ingress.kubernetes.io/security-groups: aws_security_group.default.id
 
   set {
     name  = "controller.kind"
@@ -40,7 +39,8 @@ resource "helm_release" "ingress" {
     value = "2.1.0"
   }
 
-  set { # SyncLoadBalancerFailed on service if enabled. Do not need for now.
+  # This will create by default a load balancer that we do not want.
+  set {
     name  = "controller.service.create"
     value = false
   }

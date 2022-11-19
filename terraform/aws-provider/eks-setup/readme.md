@@ -13,4 +13,5 @@ Check the outputs and check that the application 'foo' and 'bar' deployed on K8s
 > terraform destroy -auto-approve
 
 # TODO : 
- * check bastion connection ingress ?
+ * Check bastion connection ingress ?
+ * Check route53 https://hceris.com/provisioning-an-application-load-balancer-with-terraform/

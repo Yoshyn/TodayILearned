@@ -1,0 +1,36 @@
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: postgres-pv-volume
+  namespace: default
+  labels:
+    type: local
+    app: postgres
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteMany
+  claimRef: # the claimRef is here to provide a "connection" between this pv and the pvc.
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: postgres-pv-claim 
+    namespace: default
+  hostPath:
+    path: /mnt/data
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: postgres-pv-claim
+  namespace: default
+  labels:
+    app: postgres
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi

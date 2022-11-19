@@ -46,21 +46,3 @@ kubectl exec (kubectl get pod -l app=sleep -n foo -o jsonpath={.items..metadata.
 
 ## Should be ko
 curl localhost:80
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	        ipBlocks: [\"\$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' dokimi-cluster-kind-proxy-80)\"]
-# 

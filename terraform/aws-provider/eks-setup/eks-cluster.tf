@@ -1,20 +1,21 @@
 # Terraform module to create an Elastic Kubernetes (EKS) cluster and associated worker instances on AWS
 # https://github.com/terraform-aws-modules/terraform-aws-eks
 module "eks" {
-  source                          = "terraform-aws-modules/eks/aws"
-  version                         = "18.2.3"
+  source  = "terraform-aws-modules/eks/aws"
+  version = "18.2.7"
+
   cluster_endpoint_private_access = true
   cluster_endpoint_public_access  = true
-  cluster_name                    = local.cluster_name
-  cluster_version                 = "1.21"
-  vpc_id                          = module.vpc.vpc_id
-  subnet_ids                      = module.vpc.private_subnets
+
+  cluster_name    = local.cluster_name
+  cluster_version = "1.21"
+  vpc_id          = module.vpc.vpc_id
+  subnet_ids      = module.vpc.private_subnets
 
   self_managed_node_group_defaults = {
     update_launch_template_default_version = true
     instance_type                          = "t2.medium"
     root_volume_type                       = "gp3"
-    bootstrap_extra_args                   = "--kubelet-extra-args '--node-labels=node.kubernetes.io/lifecycle=spot'"
 
     iam_role_additional_policies = ["arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"]
     post_bootstrap_user_data     = <<-EOT
@@ -27,13 +28,27 @@ module "eks" {
   self_managed_node_groups = {
     worker-group-1 = {
       instance_type          = "t3.medium"
-      vpc_security_group_ids = [aws_security_group.default.id, aws_security_group.http_access.id]
       min_size               = 1
       max_size               = 2
       desired_size           = 1
+      vpc_security_group_ids = [aws_security_group.default.id]
       target_group_arns      = [aws_alb_target_group.eks_web_target_group.arn]
     }
   }
+
+  # eks_managed_node_groups = {
+  #   primary = {
+  #     min_size = 2
+  #     max_size = 4
+  #     desired_size = 2
+
+  #     instance_types = ["t3.medium"]
+  #     capacity_type  = "ON_DEMAND"
+  #     labels = {
+  #       customer_name = var.customer_name
+  #     }
+  #   }
+  # }
 }
 
 ################################################################################

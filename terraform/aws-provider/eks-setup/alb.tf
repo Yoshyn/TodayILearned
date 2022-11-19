@@ -13,6 +13,26 @@ resource "aws_lb" "eks_alb" {
   enable_http2               = true
 }
 
+resource "aws_security_group" "http_access" {
+  name        = "${local.cluster_name}-http-access-sg"
+  description = "Allow external traffic to port 80 & 443"
+  vpc_id      = module.vpc.vpc_id
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
 resource "aws_alb_listener" "eks_alb_listener" {
   load_balancer_arn = aws_lb.eks_alb.arn
 

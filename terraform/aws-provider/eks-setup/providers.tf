@@ -29,10 +29,10 @@ resource "random_string" "suffix" {
 
 locals {
   cluster_name = "${replace(basename(path.cwd), "_", "-")}-${random_string.suffix.result}"
-  default_tags = {
-    Project = "test-eks"
-    OwnerXX = "TF-Providers"
-  }
+  # default_tags = {
+  #   Project = "test-eks"
+  #   OwnerXX = "TF-Providers"
+  # }
 }
 
 #############################################################
@@ -53,7 +53,7 @@ provider "aws" {
   region  = var.region
   profile = var.aws_profile
 
-  default_tags {
-    tags = local.default_tags
-  }
+  # default_tags {
+  #   tags = local.default_tags
+  # }
 }

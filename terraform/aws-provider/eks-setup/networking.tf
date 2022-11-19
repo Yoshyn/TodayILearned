@@ -3,7 +3,8 @@ data "aws_availability_zones" "available" {}
 # Terraform module which creates VPC resources on AWS
 # Instead of aws_vpc by provider aws
 module "vpc" {
-  source = "terraform-aws-modules/vpc/aws"
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "3.11.5"
 
   name                 = "${local.cluster_name}-vpc"
   cidr                 = "10.0.0.0/16"
@@ -15,11 +16,13 @@ module "vpc" {
   enable_dns_hostnames = true
 
   public_subnet_tags = {
-    "kubernetes.io/role/elb" = "1"
+    "kubernetes.io/cluster/${local.cluster_name}" = "shared"
+    "kubernetes.io/role/elb"                      = 1
   }
 
   private_subnet_tags = {
-    "kubernetes.io/role/internal-elb" = "1"
+    "kubernetes.io/cluster/${local.cluster_name}" = "shared"
+    "kubernetes.io/role/internal-elb"             = 1
   }
 }
 
@@ -40,33 +43,10 @@ resource "aws_security_group" "default" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-}
 
-resource "aws_security_group" "http_access" {
-  name        = "${local.cluster_name}-http-access-sg"
-  description = "Allow external traffic to port 80 & 443"
-  vpc_id      = module.vpc.vpc_id
-
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+  # tags = {
+  #   "kubernetes.io/cluster/${local.cluster_name}" = "shared"
+  # }
 }
 
 data "aws_ami" "amazon_linux_2" {

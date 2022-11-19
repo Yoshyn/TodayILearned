@@ -30,7 +30,7 @@ Verification : docker run --net kind -e NPORT=$ISTIO_HTTP_NPORT --rm -ti alpine 
 
 # Test using kubectl port forward 
 
-sudo kubectl port-forward -n kube-system kube-controller-manager-dokimi-cluster-control-plane 80:$ISTIO_HTTP_NPORT
+kubectl port-forward -n kube-system kube-controller-manager-dokimi-cluster-control-plane 80:$ISTIO_HTTP_NPORT
 
 Verification : curl http://localhost:80
 

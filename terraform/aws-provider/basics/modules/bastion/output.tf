@@ -12,8 +12,8 @@ output "id" {
 }
 
 # An alternative that avoids that is to save the pem file in AWS Secrets Manager, or encrypted in S3, and provide a command to fetch it & create local file.
-resource "local_file" "bastion_private_key" {
-  filename          = pathexpand("~/.ssh/${var.bastion_key_name}.pem")
-  file_permission   = "400"
-  sensitive_content = aws_secretsmanager_secret_version.bastion_private_key_secret_version.secret_string #tls_private_key.bastion_private_key.private_key_pem
+resource "local_sensitive_file" "bastion_private_key" {
+  filename        = pathexpand("~/.ssh/${var.bastion_key_name}.pem")
+  file_permission = "400"
+  content         = aws_secretsmanager_secret_version.bastion_private_key_secret_version.secret_string #tls_private_key.bastion_private_key.private_key_pem
 }
