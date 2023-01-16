@@ -1,13 +1,16 @@
 ## Connection using the root account (login password) :
 
 ```
-set RDSHOST (aws secretsmanager get-secret-value --secret-id '/DEMO/test/database/credentials' --region eu-west-1 | jq -r '.SecretString' | jq -r '.host')
-set RDSPORT (aws secretsmanager get-secret-value --secret-id '/DEMO/test/database/credentials' --region eu-west-1 | jq -r '.SecretString' | jq -r '.port')
-set DBNAME (aws secretsmanager get-secret-value --secret-id '/DEMO/test/database/credentials' --region eu-west-1 | jq -r '.SecretString' | jq -r '.dbname')
-set AWSREGION (aws configure get region)
 
-set PG_ROOT_USER (aws secretsmanager get-secret-value --secret-id '/DEMO/test/database/credentials' --region eu-west-1 | jq -r '.SecretString' | jq -r '.username')
-set PG_ROOT_PASSWORD (aws secretsmanager get-secret-value --secret-id '/DEMO/test/database/credentials' --region eu-west-1 | jq -r '.SecretString' | jq -r '.password')
+set AWS_REGION (aws configure get region)
+
+set RDSHOST (aws secretsmanager get-secret-value --secret-id '/DEMO/test/database/credentials' --region $AWS_REGION | jq -r '.SecretString' | jq -r '.host')
+set RDSPORT (aws secretsmanager get-secret-value --secret-id '/DEMO/test/database/credentials' --region $AWS_REGION | jq -r '.SecretString' | jq -r '.port')
+set DBNAME (aws secretsmanager get-secret-value --secret-id '/DEMO/test/database/credentials' --region $AWS_REGION | jq -r '.SecretString' | jq -r '.dbname')
+
+
+set PG_ROOT_USER (aws secretsmanager get-secret-value --secret-id '/DEMO/test/database/credentials' --region $AWS_REGION | jq -r '.SecretString' | jq -r '.username')
+set PG_ROOT_PASSWORD (aws secretsmanager get-secret-value --secret-id '/DEMO/test/database/credentials' --region $AWS_REGION | jq -r '.SecretString' | jq -r '.password')
 docker run -it --env PGPASSWORD=$PG_ROOT_PASSWORD --rm postgres:latest psql -h host.docker.internal -p 5432 -U $PG_ROOT_USER -d $DBNAME -c 'SELECT current_user;'
 ```
 
@@ -33,7 +36,7 @@ See documentation for log_statement : https://postgresqlco.nf/doc/fr/param/log_s
 
 ```
 set PGUSER database_role_1
-set PGPASSWORD (aws rds generate-db-auth-token --hostname $RDSHOST --port $RDSPORT --region $AWSREGION --username $PGUSER)
+set PGPASSWORD (aws rds generate-db-auth-token --hostname $RDSHOST --port $RDSPORT --region $AWS_REGION --username $PGUSER)
 
 docker run -it --env PGPASSWORD=$PGPASSWORD --rm postgres:latest psql -h host.docker.internal -p 5432 -U $PGUSER -d $DBNAME -c 'SELECT current_user;'
 ```
@@ -65,7 +68,7 @@ docker run -it --env PGPASSWORD=$PG_ROOT_PASSWORD --rm postgres:latest psql -h h
 
 ```
 set PGUSER database_role_2
-set PGPASSWORD (aws rds generate-db-auth-token --hostname $RDSHOST --port $RDSPORT --region $AWSREGION --username $PGUSER)
+set PGPASSWORD (aws rds generate-db-auth-token --hostname $RDSHOST --port $RDSPORT --region $AWS_REGION --username $PGUSER)
 docker run -it --env PGPASSWORD=$PGPASSWORD --rm postgres:latest psql -h host.docker.internal -p 5432 -U $PGUSER -d $DBNAME -c 'SELECT current_user;'
 ```
 
